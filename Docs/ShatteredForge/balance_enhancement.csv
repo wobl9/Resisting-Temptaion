@@ -1,0 +1,16 @@
+enhance_level,success_rate_percent,fail_result,destroy_if_unprotected,forge_dust_cost,ember_core_cost,recommended_player_stage
+0_to_1,100,none,false,100,0,early
+1_to_2,100,none,false,150,0,early
+2_to_3,100,none,false,220,0,early
+3_to_4,85,minus_one,false,320,0,early
+4_to_5,70,minus_one,false,450,0,early_mid
+5_to_6,55,minus_one,false,620,0,mid
+6_to_7,40,minus_one,false,850,1,mid
+7_to_8,30,minus_one,false,1150,1,mid
+8_to_9,22,minus_one,false,1500,2,mid_late
+9_to_10,16,minus_one,false,2000,2,late
+10_to_11,12,minus_one,true,2600,3,late
+11_to_12,9,minus_one,true,3300,4,late
+12_to_13,6,minus_one,true,4200,5,endgame
+13_to_14,4,minus_one,true,5400,6,endgame
+14_to_15,2,minus_one,true,7000,8,endgame

@@ -1,0 +1,16 @@
+operation,forge_dust_cost,ember_core_cost,sigil_token_cost,insurance_seal_cost,output,loss_risk,design_goal
+insert_attribute_t1,250,0,0,0,add_basic_attribute,none,enable early build expression
+insert_attribute_t2,700,1,0,0,add_advanced_attribute,none,midgame customization
+insert_attribute_t3,1600,3,0,0,add_elite_attribute,none,endgame chase
+extract_attribute,900,2,0,0,recover_attribute_item,none,allow expensive recovery
+reroll_attribute_value,500,1,0,0,new_roll_same_attribute,none,sink for optimization
+add_socket_weapon,1800,3,0,0,unlock_socket_slot,none,long-term item growth
+add_socket_armor,1200,2,0,0,unlock_socket_slot,none,progressive build depth
+skill_mastery_level_up,0,0,25,0,permanent_skill_power_up,none,meta progression
+skill_risk_rank_up,600,2,0,0,temporary_or_run_bound_power,yes,high-risk power burst
+stabilizer_craft,450,1,0,0,consumable_reduce_failure_tier,none,smooth RNG frustration
+anti_break_ward_craft,0,4,10,0,prevent_item_destruction_once,none,protect high investment
+floor_anchor_craft,0,5,15,0,set_min_enhance_floor,none,reduce catastrophic loss
+run_insurance_basic,0,0,0,1,protect_1_slot_this_run,none,new player retention
+run_insurance_advanced,0,0,20,2,protect_1_slot_and_partial_loot,none,late game safety valve
+emergency_extract_use,0,0,0,0,immediate_extraction_with_penalty,none,panic tool at high tension
