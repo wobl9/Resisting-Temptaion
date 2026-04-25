@@ -11,10 +11,16 @@ namespace ShatteredForge.Combat
     /// <summary>
     /// Spawns a simple arena, player, and enemies; notifies <see cref="PlayableLoopDemo"/> when a room is cleared or the player dies.
     /// </summary>
+    /// ..
     public class CombatRoomBootstrap : MonoBehaviour
     {
         [SerializeField] private PlayableLoopDemo loopDemo;
         [SerializeField] private Vector3 arenaSize = new(22f, 1f, 22f);
+
+        [Header("Camera (original static view)")]
+        [SerializeField] [Range(40f, 70f)] private float cameraPitch = 55f;
+        [SerializeField] private float cameraHeight = 22f;
+        [SerializeField] private float cameraBackOffset = -16f;
 
         private void Awake()
         {
@@ -176,42 +182,20 @@ namespace ShatteredForge.Combat
         }
 
         /// <summary>
-        /// Orthographic top-down: full arena in frame (uses <see cref="arenaSize"/> + wall margin).
-        /// Reconfigures <see cref="Camera.main"/> if it already exists (typical editor template camera).
+        /// Original static camera from first implementation.
         /// </summary>
         private void ConfigureMainCameraForArena()
         {
-            var camGo = Camera.main != null
-                ? Camera.main.gameObject
-                : GameObject.FindGameObjectWithTag("MainCamera");
-
-            if (camGo == null)
+            if (Camera.main == null && GameObject.FindGameObjectWithTag("MainCamera") == null)
             {
-                camGo = new GameObject("Main Camera");
+                var camGo = new GameObject("Main Camera");
+                var cam = camGo.AddComponent<Camera>();
                 camGo.tag = "MainCamera";
-                if (camGo.GetComponent<AudioListener>() == null)
-                {
-                    camGo.AddComponent<AudioListener>();
-                }
+                camGo.AddComponent<AudioListener>();
+                cam.transform.SetPositionAndRotation(
+                    new Vector3(0f, cameraHeight, cameraBackOffset),
+                    Quaternion.Euler(cameraPitch, 0f, 0f));
             }
-
-            var cam = camGo.GetComponent<Camera>();
-            if (cam == null)
-            {
-                cam = camGo.AddComponent<Camera>();
-            }
-
-            var wallMargin = 1.5f;
-            var halfExtent = Mathf.Max(arenaSize.x, arenaSize.z) * 0.5f + wallMargin;
-            var aspect = cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
-            var orthoSize = Mathf.Max(halfExtent, halfExtent / aspect);
-
-            cam.orthographic = true;
-            cam.orthographicSize = orthoSize;
-            cam.nearClipPlane = 0.3f;
-            cam.farClipPlane = 80f;
-            cam.clearFlags = CameraClearFlags.Skybox;
-            cam.transform.SetPositionAndRotation(new Vector3(0f, 36f, 0.01f), Quaternion.Euler(90f, 0f, 0f));
 
             if (UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Length == 0)
             {
@@ -259,7 +243,6 @@ namespace ShatteredForge.Combat
         {
             if (_player != null)
             {
-                _player.transform.position = new Vector3(-6f, 0f, 0f);
                 _player.BindRun(run, () => loopDemo.ApplyPlayerDeathFromGameplay());
                 return;
             }

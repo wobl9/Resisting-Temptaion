@@ -12,8 +12,6 @@
 
 Input uses the **Input System** package (not legacy `UnityEngine.Input`), matching Player Settings when active input is *Input System Package* only.
 
-On first combat load, **Main Camera** is switched to **orthographic top-down** (full arena in frame). If your scene already had a camera, it is reconfigured the same way.
-
 - `R` — start run from hub
 - `WASD` (or arrows) — move; **gamepad** left stick also works
 - Auto-fire at nearest enemy

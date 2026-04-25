@@ -9,6 +9,7 @@ namespace ShatteredForge.Combat
     public class SimplePlayerController : MonoBehaviour
     {
         [SerializeField] private float moveSpeed = 6f;
+        [SerializeField] private float turnSpeed = 14f;
         [SerializeField] private float fireInterval = 0.35f;
         [SerializeField] private Transform fireOrigin;
 
@@ -17,6 +18,9 @@ namespace ShatteredForge.Combat
         private RunState _runState;
         private Action _onDeath;
         private float _nextFire;
+        private Vector3 _lastMoveDir = Vector3.forward;
+
+        public Vector3 PlanarFacingDirection => _lastMoveDir;
 
         private void Awake()
         {
@@ -38,6 +42,12 @@ namespace ShatteredForge.Combat
         {
             var move = DemoInput.ReadMoveXZ();
             _controller.Move(move * (moveSpeed * Time.deltaTime));
+            if (move.sqrMagnitude > 0.0001f)
+            {
+                _lastMoveDir = move.normalized;
+                var targetRotation = Quaternion.LookRotation(_lastMoveDir, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
+            }
 
             if (Time.time >= _nextFire)
             {
