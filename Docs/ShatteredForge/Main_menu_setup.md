@@ -8,6 +8,7 @@
 Main menu features implemented:
 - Select profile (progress is bound to selected profile).
 - Create new game (creates new profile + marks it active).
+- Delete profile (with confirmation).
 - Open settings (volume, fullscreen, resolution).
 - Quit game.
 
@@ -16,5 +17,6 @@ Profile save location:
   - `profiles_index.json`
   - `Profiles/profile_<id>.json`
 
-Runtime key:
-- Active profile id is also mirrored to `PlayerPrefs["sf.active_profile_id"]` for quick access by gameplay systems.
+Runtime keys (menu → gameplay handoff):
+- `PlayerPrefs["sf.active_profile_id"]` — active profile id (`MenuSessionPrefs.ActiveProfileIdKey`).
+- `PlayerPrefs["sf.resume_expedition"]` — `1` to resume an active expedition, `0` to start fresh (`MenuSessionPrefs.ResumeExpeditionKey`). Cleared by gameplay bootstrap after read.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ShatteredForge.Combat;
 using ShatteredForge.Core;
 using ShatteredForge.Input;
+using ShatteredForge.Menu;
 using ShatteredForge.Progression;
 using ShatteredForge.Run;
 using UnityEngine;
@@ -29,6 +30,10 @@ namespace ShatteredForge.Prototype
         [Header("Combat (same GameObject as GameBootstrap)")]
         [SerializeField] private CombatRoomBootstrap combatBootstrap;
 
+        private ProfileStorageService _profilesService;
+        private string _profileId;
+        private ProfileData _profile;
+
         private AccountState _account;
         private RunSessionController _runController;
         private RunGenerator _runGenerator;
@@ -42,13 +47,59 @@ namespace ShatteredForge.Prototype
 
         private void Awake()
         {
-            _account = BuildInitialAccount();
+            _profilesService = new ProfileStorageService();
             _runController = new RunSessionController(new RiskLossService());
             combatBootstrap = GetComponent<CombatRoomBootstrap>();
             if (combatBootstrap == null)
             {
                 combatBootstrap = gameObject.AddComponent<CombatRoomBootstrap>();
             }
+
+            _profileId = PlayerPrefs.GetString(MenuSessionPrefs.ActiveProfileIdKey, string.Empty);
+            var resumeExpedition = PlayerPrefs.GetInt(MenuSessionPrefs.ResumeExpeditionKey, 0) == 1;
+            PlayerPrefs.DeleteKey(MenuSessionPrefs.ResumeExpeditionKey);
+            PlayerPrefs.Save();
+
+            if (string.IsNullOrEmpty(_profileId) || !_profilesService.TryLoadProfile(_profileId, out _profile))
+            {
+                _profile = null;
+                _profileId = string.Empty;
+                _account = BuildInitialAccount();
+                _lastOutcome = "No profile loaded (demo fallback).";
+                return;
+            }
+
+            _account = LoadOrCreateAccount(_profile);
+            SyncLegacyResourcesFromProfile(_profile, _account);
+
+            var savedMinRooms = _profile.expeditionMinRoomsPerAct;
+            var savedMaxRooms = _profile.expeditionMaxRoomsPerAct;
+            var savedStartingHp = _profile.expeditionStartingHpPercent;
+
+            minRoomsPerAct = savedMinRooms > 0 ? savedMinRooms : minRoomsPerAct;
+            maxRoomsPerAct = savedMaxRooms > 0 ? Mathf.Max(minRoomsPerAct, savedMaxRooms) : maxRoomsPerAct;
+            startingHpPercent = savedStartingHp > 0 ? Mathf.Clamp(savedStartingHp, 1, 100) : startingHpPercent;
+            autoInsureFirstItem = _profile.expeditionAutoInsureFirstItem;
+
+            if (resumeExpedition && _profile.hasActiveExpedition)
+            {
+                RestoreExpeditionFromProfile(_profile);
+                combatBootstrap?.OnRunStartedOrRoomAdvanced();
+                _lastOutcome = "Expedition resumed.";
+                PersistAccount();
+                PersistExpedition();
+                return;
+            }
+
+            if (resumeExpedition && !_profile.hasActiveExpedition)
+            {
+                _lastOutcome = "Resume requested but no expedition save exists.";
+            }
+
+            ClearExpedition(_profile, save: true);
+            BootstrapFreshExpedition();
+            PersistAccount();
+            PersistExpedition();
         }
 
         private void Update()
@@ -57,6 +108,8 @@ namespace ShatteredForge.Prototype
             {
                 _state = DemoState.Hub;
                 _lastOutcome = "Returned to hub. Press R to start another run.";
+                ClearExpedition(_profile, save: true);
+                PersistAccount();
             }
 
             if (DemoInput.KeyDown(Key.R))
@@ -109,6 +162,8 @@ namespace ShatteredForge.Prototype
             _lastOutcome = "Run started.";
 
             combatBootstrap?.OnRunStartedOrRoomAdvanced();
+            PersistAccount();
+            PersistExpedition();
         }
 
         public bool TryGetCurrentRoom(out RoomType room)
@@ -173,6 +228,8 @@ namespace ShatteredForge.Prototype
             }
 
             _lastOutcome = $"Cleared room {run.roomIndex}/{_rooms.Count}. Current HP: {(int)(run.hpState * 100)}%.";
+            PersistAccount();
+            PersistExpedition();
         }
 
         private void ExtractRun()
@@ -186,6 +243,8 @@ namespace ShatteredForge.Prototype
             _runController.ResolveExtraction(_account);
             _state = DemoState.Resolved;
             _lastOutcome = $"Extracted successfully with {carried} loot items.";
+            PersistAccount();
+            PersistExpedition();
         }
 
         private void KillPlayer()
@@ -200,6 +259,8 @@ namespace ShatteredForge.Prototype
             _runController.ResolveDeath(_account);
             _state = DemoState.Resolved;
             _lastOutcome = $"Player died. Lost {equipped} equipped items and {loot} carried loot (except insured).";
+            PersistAccount();
+            PersistExpedition();
         }
 
         private void OnGUI()
@@ -230,6 +291,37 @@ namespace ShatteredForge.Prototype
                 ? "WASD move | Auto-fire at nearest enemy | R Start | E Extract | K Die | Space non-combat rooms | H hub after run"
                 : "Controls: R - Start Run, C - Clear Room, E - Extract, K - Die | H hub after run";
             GUI.Label(new Rect(x, y, 1200, line), controls);
+        }
+
+        private void BootstrapFreshExpedition()
+        {
+            if (_state == DemoState.InRun || _account.stash.Count == 0)
+            {
+                return;
+            }
+
+            var runState = new RunState
+            {
+                hpState = Mathf.Clamp01(startingHpPercent / 100f)
+            };
+
+            var equippedWeapon = _account.stash[0];
+            _account.stash.RemoveAt(0);
+            equippedWeapon.isInsuredForRun = autoInsureFirstItem && _account.insuranceSeal > 0;
+            if (equippedWeapon.isInsuredForRun)
+            {
+                _account.insuranceSeal--;
+            }
+
+            runState.equippedLoadout.Add(equippedWeapon);
+            _runController.StartRun(UnityEngine.Random.Range(1, int.MaxValue), runState);
+
+            _runGenerator = new RunGenerator(_runController.CurrentRun.seed);
+            _rooms = _runGenerator.GenerateAct(UnityEngine.Random.Range(minRoomsPerAct, maxRoomsPerAct + 1));
+            _state = DemoState.InRun;
+            _lastOutcome = "Run started.";
+
+            combatBootstrap?.OnRunStartedOrRoomAdvanced();
         }
 
         private static AccountState BuildInitialAccount()
@@ -269,6 +361,176 @@ namespace ShatteredForge.Prototype
                 rarity = roomType == RoomType.Boss ? "Epic" : "Magic",
                 enhanceLevel = 0
             };
+        }
+
+        private static AccountState LoadOrCreateAccount(ProfileData profile)
+        {
+            if (!string.IsNullOrWhiteSpace(profile.accountJson))
+            {
+                try
+                {
+                    return JsonUtility.FromJson<AccountState>(profile.accountJson) ?? BuildInitialAccount();
+                }
+                catch
+                {
+                    return BuildInitialAccount();
+                }
+            }
+
+            return BuildInitialAccount();
+        }
+
+        private static void SyncLegacyResourcesFromProfile(ProfileData profile, AccountState account)
+        {
+            if (profile == null || account == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(profile.accountJson))
+            {
+                account.forgeDust = profile.forgeDust;
+                account.emberCore = profile.emberCore;
+                account.sigilToken = profile.sigilToken;
+                account.insuranceSeal = profile.insuranceSeal;
+            }
+        }
+
+        private void PersistAccount()
+        {
+            if (_profile == null)
+            {
+                return;
+            }
+
+            _profile.forgeDust = _account.forgeDust;
+            _profile.emberCore = _account.emberCore;
+            _profile.sigilToken = _account.sigilToken;
+            _profile.insuranceSeal = _account.insuranceSeal;
+            _profile.accountJson = JsonUtility.ToJson(_account);
+            _profilesService.SaveProfile(_profile);
+        }
+
+        private void PersistExpedition()
+        {
+            if (_profile == null)
+            {
+                return;
+            }
+
+            _profile.expeditionSchemaVersion = 1;
+            _profile.expeditionMinRoomsPerAct = minRoomsPerAct;
+            _profile.expeditionMaxRoomsPerAct = maxRoomsPerAct;
+            _profile.expeditionStartingHpPercent = startingHpPercent;
+            _profile.expeditionAutoInsureFirstItem = autoInsureFirstItem;
+
+            if (_runController.CurrentRun == null || _rooms == null)
+            {
+                _profile.hasActiveExpedition = false;
+                _profilesService.SaveProfile(_profile);
+                return;
+            }
+
+            var run = _runController.CurrentRun;
+            _profile.hasActiveExpedition = _state == DemoState.InRun;
+            _profile.expeditionDemoState = (int)_state;
+            _profile.expeditionRunSeed = run.seed;
+            _profile.expeditionRoomIndex = run.roomIndex;
+            _profile.expeditionHpState = run.hpState;
+            _profile.expeditionRunJson = JsonUtility.ToJson(run);
+
+            _profile.expeditionRoomTypesCount = _rooms.Count;
+            _profile.expeditionRoomTypes = new int[_rooms.Count];
+            for (var i = 0; i < _rooms.Count; i++)
+            {
+                _profile.expeditionRoomTypes[i] = (int)_rooms[i];
+            }
+
+            _profilesService.SaveProfile(_profile);
+        }
+
+        private void ClearExpedition(ProfileData profile, bool save)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            _runController.ClearRun();
+            _rooms = null;
+
+            profile.hasActiveExpedition = false;
+            profile.expeditionDemoState = 0;
+            profile.expeditionRunSeed = 0;
+            profile.expeditionRoomIndex = 0;
+            profile.expeditionHpState = 1f;
+            profile.expeditionRoomTypesCount = 0;
+            profile.expeditionRoomTypes = Array.Empty<int>();
+            profile.expeditionRunJson = string.Empty;
+
+            if (save)
+            {
+                _profilesService.SaveProfile(profile);
+            }
+        }
+
+        private void RestoreExpeditionFromProfile(ProfileData profile)
+        {
+            if (!string.IsNullOrWhiteSpace(profile.expeditionRunJson))
+            {
+                var restored = JsonUtility.FromJson<RunState>(profile.expeditionRunJson);
+                _runController.LoadRun(restored);
+            }
+
+            _runGenerator = new RunGenerator(profile.expeditionRunSeed);
+            _rooms = new List<RoomType>();
+
+            if (profile.expeditionRoomTypes != null &&
+                profile.expeditionRoomTypes.Length == profile.expeditionRoomTypesCount &&
+                profile.expeditionRoomTypesCount > 0)
+            {
+                foreach (var rt in profile.expeditionRoomTypes)
+                {
+                    _rooms.Add((RoomType)rt);
+                }
+            }
+            else
+            {
+                _rooms = _runGenerator.GenerateAct(UnityEngine.Random.Range(minRoomsPerAct, maxRoomsPerAct + 1));
+            }
+
+            if (_runController.CurrentRun == null)
+            {
+                var runState = new RunState
+                {
+                    hpState = Mathf.Clamp01(profile.expeditionHpState)
+                };
+
+                if (_account.stash.Count > 0 && profile.expeditionRoomIndex <= 0)
+                {
+                    var equippedWeapon = _account.stash[0];
+                    _account.stash.RemoveAt(0);
+                    equippedWeapon.isInsuredForRun = autoInsureFirstItem && _account.insuranceSeal > 0;
+                    if (equippedWeapon.isInsuredForRun)
+                    {
+                        _account.insuranceSeal--;
+                    }
+
+                    runState.equippedLoadout.Add(equippedWeapon);
+                }
+
+                _runController.StartRun(profile.expeditionRunSeed, runState);
+                if (_runController.CurrentRun != null)
+                {
+                    _runController.CurrentRun.roomIndex = Mathf.Clamp(profile.expeditionRoomIndex, 0, int.MaxValue);
+                }
+            }
+
+            _state = (DemoState)profile.expeditionDemoState;
+            if (_state != DemoState.InRun && _state != DemoState.Resolved)
+            {
+                _state = DemoState.InRun;
+            }
         }
     }
 }

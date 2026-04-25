@@ -22,7 +22,7 @@ namespace ShatteredForge.Menu
     }
 
     [Serializable]
-    internal class ProfileData
+    public class ProfileData
     {
         public string profileId;
         public string profileName;
@@ -32,6 +32,26 @@ namespace ShatteredForge.Menu
         public int insuranceSeal = 1;
         public string createdAtUtc;
         public string updatedAtUtc;
+
+        // Serialized gameplay account (stash/currencies/skills/etc).
+        public string accountJson = string.Empty;
+
+        // Expedition (in-run) persistence.
+        public bool hasActiveExpedition;
+        public int expeditionSchemaVersion = 1;
+        public int expeditionDemoState; // maps to PlayableLoopDemo.DemoState enum int
+        public int expeditionRunSeed;
+        public int expeditionRoomIndex;
+        public float expeditionHpState = 1f;
+        public int expeditionMinRoomsPerAct = 8;
+        public int expeditionMaxRoomsPerAct = 14;
+        public int expeditionStartingHpPercent = 100;
+        public bool expeditionAutoInsureFirstItem = true;
+        public int expeditionRoomTypesCount;
+        public int[] expeditionRoomTypes = Array.Empty<int>();
+
+        // Full serialized RunState for expedition resume fidelity.
+        public string expeditionRunJson = string.Empty;
     }
 
     public class ProfileStorageService
@@ -114,6 +134,105 @@ namespace ShatteredForge.Menu
         {
             var profiles = LoadProfiles(out _);
             return profiles.Count > 0;
+        }
+
+        public bool TryLoadProfile(string profileId, out ProfileData profile)
+        {
+            profile = null;
+            if (string.IsNullOrWhiteSpace(profileId))
+            {
+                return false;
+            }
+
+            EnsureFolders();
+            var path = GetProfilePath(profileId);
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            var json = File.ReadAllText(path);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            var data = JsonUtility.FromJson<ProfileData>(json);
+            if (data == null || string.IsNullOrWhiteSpace(data.profileId))
+            {
+                return false;
+            }
+
+            profile = data;
+            return true;
+        }
+
+        public bool HasActiveExpedition(string profileId)
+        {
+            if (!TryLoadProfile(profileId, out var profile))
+            {
+                return false;
+            }
+
+            return profile.hasActiveExpedition;
+        }
+
+        public void SaveProfile(ProfileData profile)
+        {
+            if (profile == null || string.IsNullOrWhiteSpace(profile.profileId))
+            {
+                return;
+            }
+
+            EnsureFolders();
+            profile.updatedAtUtc = DateTime.UtcNow.ToString("O");
+            var path = GetProfilePath(profile.profileId);
+            File.WriteAllText(path, JsonUtility.ToJson(profile, true));
+        }
+
+        public bool DeleteProfile(string profileId)
+        {
+            if (string.IsNullOrWhiteSpace(profileId))
+            {
+                return false;
+            }
+
+            EnsureFolders();
+            var index = LoadIndex();
+            var profiles = index.profiles ?? new List<ProfileSummary>();
+
+            var removed = false;
+            for (var i = profiles.Count - 1; i >= 0; i--)
+            {
+                if (profiles[i].id != profileId)
+                {
+                    continue;
+                }
+
+                profiles.RemoveAt(i);
+                removed = true;
+            }
+
+            var profilePath = GetProfilePath(profileId);
+            if (File.Exists(profilePath))
+            {
+                File.Delete(profilePath);
+                removed = true;
+            }
+
+            if (!removed)
+            {
+                return false;
+            }
+
+            if (index.activeProfileId == profileId)
+            {
+                index.activeProfileId = profiles.Count > 0 ? profiles[0].id : string.Empty;
+            }
+
+            index.profiles = profiles;
+            SaveIndex(index);
+            return true;
         }
 
         private void EnsureFolders()

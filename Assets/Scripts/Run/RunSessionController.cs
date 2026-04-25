@@ -1,5 +1,6 @@
 using ShatteredForge.Core;
 using ShatteredForge.Progression;
+using UnityEngine;
 
 namespace ShatteredForge.Run
 {
@@ -19,7 +20,7 @@ namespace ShatteredForge.Run
             CurrentRun.seed = seed;
             CurrentRun.actIndex = 0;
             CurrentRun.roomIndex = 0;
-            CurrentRun.hpState = 1f;
+            CurrentRun.hpState = Mathf.Clamp01(loadoutSnapshot.hpState);
             CurrentRun.extractionStatus = false;
         }
 
@@ -31,6 +32,23 @@ namespace ShatteredForge.Run
             }
 
             CurrentRun.roomIndex++;
+        }
+
+        public void ClearRun()
+        {
+            CurrentRun = null;
+        }
+
+        public void LoadRun(RunState runState)
+        {
+            if (runState == null)
+            {
+                CurrentRun = null;
+                return;
+            }
+
+            CurrentRun = runState;
+            CurrentRun.hpState = Mathf.Clamp01(CurrentRun.hpState);
         }
 
         public void ResolveDeath(AccountState account)
