@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using ShatteredForge.Localization;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace ShatteredForge.Menu
 {
@@ -24,8 +27,8 @@ namespace ShatteredForge.Menu
         private string _activeProfileId;
 
         private string _deleteCandidateProfileId;
-        private string _newProfileName = "Новый охотник";
-        private string _status = "Добро пожаловать в Shattered Forge";
+        private string _newProfileName = string.Empty;
+        private string _status = string.Empty;
 
         private bool _cachedHasActiveExpedition;
 
@@ -38,6 +41,16 @@ namespace ShatteredForge.Menu
         {
             _profilesService = new ProfileStorageService();
             ReloadProfiles();
+
+            if (string.IsNullOrEmpty(_newProfileName))
+            {
+                _newProfileName = Loc.Ui(UiKeys.DefaultNewProfileName);
+            }
+
+            if (string.IsNullOrEmpty(_status))
+            {
+                _status = Loc.Ui(UiKeys.Welcome);
+            }
 
             _masterVolume = AudioListener.volume;
             _fullscreen = Screen.fullScreen;
@@ -56,7 +69,7 @@ namespace ShatteredForge.Menu
 
             GUI.Box(rect, "");
             GUILayout.BeginArea(new Rect(rect.x + 24f, rect.y + 24f, rect.width - 48f, rect.height - 48f));
-            GUILayout.Label("SHATTERED FORGE", HeaderStyle());
+            GUILayout.Label(Loc.Ui(UiKeys.GameTitle), HeaderStyle());
             GUILayout.Space(8f);
             GUILayout.Label(_status);
             GUILayout.Space(18f);
@@ -93,17 +106,17 @@ namespace ShatteredForge.Menu
 
             if (!hasAnyProfiles)
             {
-                if (GUILayout.Button("Новая игра", ButtonOptions()))
+                if (GUILayout.Button(Loc.Ui(UiKeys.NewGame), ButtonOptions()))
                 {
                     _state = ScreenState.NewProfile;
                 }
 
-                if (GUILayout.Button("Настройки", ButtonOptions()))
+                if (GUILayout.Button(Loc.Ui(UiKeys.Settings), ButtonOptions()))
                 {
                     _state = ScreenState.Settings;
                 }
 
-                if (GUILayout.Button("Выход из игры", ButtonOptions()))
+                if (GUILayout.Button(Loc.Ui(UiKeys.QuitGame), ButtonOptions()))
                 {
                     QuitGame();
                 }
@@ -113,20 +126,20 @@ namespace ShatteredForge.Menu
 
             if (!hasActiveProfile)
             {
-                GUILayout.Label("Нет активного профиля. Выберите профиль.");
-                if (GUILayout.Button("Выбрать профиль", ButtonOptions()))
+                GUILayout.Label(Loc.Ui(UiKeys.NoActiveProfile));
+                if (GUILayout.Button(Loc.Ui(UiKeys.SelectProfile), ButtonOptions()))
                 {
                     ReloadProfiles();
                     _state = ScreenState.Profiles;
                 }
 
                 GUILayout.Space(10f);
-                if (GUILayout.Button("Настройки", ButtonOptions()))
+                if (GUILayout.Button(Loc.Ui(UiKeys.Settings), ButtonOptions()))
                 {
                     _state = ScreenState.Settings;
                 }
 
-                if (GUILayout.Button("Выход из игры", ButtonOptions()))
+                if (GUILayout.Button(Loc.Ui(UiKeys.QuitGame), ButtonOptions()))
                 {
                     QuitGame();
                 }
@@ -134,12 +147,12 @@ namespace ShatteredForge.Menu
                 return;
             }
 
-            if (_cachedHasActiveExpedition && GUILayout.Button("Продолжить игру", ButtonOptions()))
+            if (_cachedHasActiveExpedition && GUILayout.Button(Loc.Ui(UiKeys.ContinueGame), ButtonOptions()))
             {
                 TryEnterGameplay(_activeProfileId, resumeExpedition: true);
             }
 
-            if (GUILayout.Button("Новая игра", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.NewGame), ButtonOptions()))
             {
                 if (_cachedHasActiveExpedition)
                 {
@@ -150,12 +163,12 @@ namespace ShatteredForge.Menu
                 TryEnterGameplay(_activeProfileId, resumeExpedition: false);
             }
 
-            if (GUILayout.Button("Настройки", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.Settings), ButtonOptions()))
             {
                 _state = ScreenState.Settings;
             }
 
-            if (GUILayout.Button("Выход из игры", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.QuitGame), ButtonOptions()))
             {
                 QuitGame();
             }
@@ -176,27 +189,27 @@ namespace ShatteredForge.Menu
             };
 
             var rect = new Rect((Screen.width - 520f) * 0.5f, 12f, 520f, 28f);
-            if (GUI.Button(rect, $"Профиль: {GetActiveProfileName()}", buttonStyle))
+            if (GUI.Button(rect, Loc.UiFormat(UiKeys.ProfileButton, GetActiveProfileName()), buttonStyle))
             {
                 _state = ScreenState.ProfileActions;
-                _status = "Меню профиля.";
+                _status = Loc.Ui(UiKeys.ProfileMenuOpened);
             }
         }
 
         private void DrawProfileActionsMenu()
         {
-            GUILayout.Label("Профиль", HeaderStyle());
+            GUILayout.Label(Loc.Ui(UiKeys.ProfileMenuTitle), HeaderStyle());
             GUILayout.Space(8f);
-            GUILayout.Label($"Текущий: {GetActiveProfileName()}");
+            GUILayout.Label(Loc.UiFormat(UiKeys.ProfileMenuCurrent, GetActiveProfileName()));
             GUILayout.Space(12f);
 
-            if (GUILayout.Button("Сменить профиль", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.SwitchProfile), ButtonOptions()))
             {
                 ReloadProfiles();
                 _state = ScreenState.Profiles;
             }
 
-            if (GUILayout.Button("Создать новый профиль", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.CreateNewProfile), ButtonOptions()))
             {
                 _state = ScreenState.NewProfile;
             }
@@ -205,7 +218,7 @@ namespace ShatteredForge.Menu
             DrawDeleteProfileControls();
 
             GUILayout.Space(14f);
-            if (GUILayout.Button("Назад", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.Back), ButtonOptions()))
             {
                 _state = ScreenState.Main;
             }
@@ -213,29 +226,31 @@ namespace ShatteredForge.Menu
 
         private void DrawProfilesMenu()
         {
-            GUILayout.Label("Выбор профиля", HeaderStyle());
+            GUILayout.Label(Loc.Ui(UiKeys.ProfilesTitle), HeaderStyle());
             GUILayout.Space(8f);
 
             if (_profiles.Count == 0)
             {
-                GUILayout.Label("Профилей нет. Создайте новую игру.");
+                GUILayout.Label(Loc.Ui(UiKeys.ProfilesEmpty));
             }
             else
             {
                 foreach (var profile in _profiles)
                 {
                     var isActive = profile.id == _activeProfileId;
-                    var title = isActive ? $"{profile.displayName}  (АКТИВНЫЙ)" : profile.displayName;
+                    var title = isActive
+                        ? profile.displayName + Loc.Ui(UiKeys.ActiveSuffix)
+                        : profile.displayName;
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button(title, ButtonOptions()))
                     {
                         _profilesService.SetActiveProfile(profile.id);
                         ReloadProfiles();
-                        _status = $"Профиль выбран: {profile.displayName}";
+                        _status = Loc.UiFormat(UiKeys.ProfileSelected, profile.displayName);
                         _state = ScreenState.Main;
                     }
 
-                    if (GUILayout.Button("Удалить", GUILayout.Height(36f), GUILayout.Width(110f)))
+                    if (GUILayout.Button(Loc.Ui(UiKeys.Delete), GUILayout.Height(36f), GUILayout.Width(110f)))
                     {
                         _deleteCandidateProfileId = profile.id;
                     }
@@ -244,14 +259,14 @@ namespace ShatteredForge.Menu
 
                     if (_deleteCandidateProfileId == profile.id)
                     {
-                        GUILayout.Label($"Удалить профиль '{profile.displayName}'?");
+                        GUILayout.Label(Loc.UiFormat(UiKeys.DeleteProfilePrompt, profile.displayName));
                         GUILayout.BeginHorizontal();
-                        if (GUILayout.Button("Да, удалить", GUILayout.Height(30f)))
+                        if (GUILayout.Button(Loc.Ui(UiKeys.YesDelete), GUILayout.Height(30f)))
                         {
                             DeleteProfile(profile.id);
                         }
 
-                        if (GUILayout.Button("Отмена", GUILayout.Height(30f)))
+                        if (GUILayout.Button(Loc.Ui(UiKeys.Cancel), GUILayout.Height(30f)))
                         {
                             _deleteCandidateProfileId = null;
                         }
@@ -262,7 +277,7 @@ namespace ShatteredForge.Menu
             }
 
             GUILayout.Space(14f);
-            if (GUILayout.Button("Назад", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.Back), ButtonOptions()))
             {
                 _state = ScreenState.Main;
             }
@@ -270,21 +285,21 @@ namespace ShatteredForge.Menu
 
         private void DrawNewProfileMenu()
         {
-            GUILayout.Label("Новая игра", HeaderStyle());
+            GUILayout.Label(Loc.Ui(UiKeys.NewProfileTitle), HeaderStyle());
             GUILayout.Space(6f);
-            GUILayout.Label("Имя профиля:");
+            GUILayout.Label(Loc.Ui(UiKeys.ProfileNameLabel));
             _newProfileName = GUILayout.TextField(_newProfileName, GUILayout.Height(28f));
 
             GUILayout.Space(10f);
-            if (GUILayout.Button("Подтвердить и начать", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.ConfirmAndStart), ButtonOptions()))
             {
                 var profileId = _profilesService.CreateProfile(_newProfileName);
                 ReloadProfiles();
-                _status = $"Создан профиль: {GetActiveProfileName()}";
+                _status = Loc.UiFormat(UiKeys.StatusProfileCreated, GetActiveProfileName());
                 TryEnterGameplay(profileId, resumeExpedition: false);
             }
 
-            if (GUILayout.Button("Назад", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.Back), ButtonOptions()))
             {
                 _state = ScreenState.Main;
             }
@@ -292,18 +307,18 @@ namespace ShatteredForge.Menu
 
         private void DrawNewExpeditionConfirmMenu()
         {
-            GUILayout.Label("Новая вылазка", HeaderStyle());
+            GUILayout.Label(Loc.Ui(UiKeys.NewExpeditionTitle), HeaderStyle());
             GUILayout.Space(8f);
-            GUILayout.Label($"Профиль: {GetActiveProfileName()}");
-            GUILayout.Label("У вас есть активная вылазка. Начать новую вылазку и заменить текущую?");
+            GUILayout.Label(Loc.UiFormat(UiKeys.NewExpeditionProfileLine, GetActiveProfileName()));
+            GUILayout.Label(Loc.Ui(UiKeys.NewExpeditionPrompt));
             GUILayout.Space(10f);
 
-            if (GUILayout.Button("Да, начать новую вылазку", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.NewExpeditionConfirm), ButtonOptions()))
             {
                 TryEnterGameplay(_activeProfileId, resumeExpedition: false);
             }
 
-            if (GUILayout.Button("Назад", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.Back), ButtonOptions()))
             {
                 _state = ScreenState.Main;
             }
@@ -311,10 +326,10 @@ namespace ShatteredForge.Menu
 
         private void DrawSettingsMenu()
         {
-            GUILayout.Label("Настройки", HeaderStyle());
+            GUILayout.Label(Loc.Ui(UiKeys.SettingsTitle), HeaderStyle());
             GUILayout.Space(8f);
 
-            GUILayout.Label($"Громкость: {Mathf.RoundToInt(_masterVolume * 100f)}%");
+            GUILayout.Label(Loc.UiFormat(UiKeys.VolumeLabel, Mathf.RoundToInt(_masterVolume * 100f).ToString()));
             var newVolume = GUILayout.HorizontalSlider(_masterVolume, 0f, 1f, GUILayout.Height(24f));
             if (!Mathf.Approximately(newVolume, _masterVolume))
             {
@@ -323,7 +338,7 @@ namespace ShatteredForge.Menu
             }
 
             GUILayout.Space(8f);
-            var fullscreenLabel = _fullscreen ? "Полный экран: ВКЛ" : "Полный экран: ВЫКЛ";
+            var fullscreenLabel = _fullscreen ? Loc.Ui(UiKeys.FullscreenOn) : Loc.Ui(UiKeys.FullscreenOff);
             if (GUILayout.Button(fullscreenLabel, ButtonOptions()))
             {
                 _fullscreen = !_fullscreen;
@@ -333,8 +348,8 @@ namespace ShatteredForge.Menu
             if (_resolutions != null && _resolutions.Length > 0)
             {
                 GUILayout.Space(8f);
-                GUILayout.Label($"Разрешение: {GetResolutionLabel(_resolutionIndex)}");
-                if (GUILayout.Button("Следующее разрешение", ButtonOptions()))
+                GUILayout.Label(Loc.UiFormat(UiKeys.ResolutionLabel, GetResolutionLabel(_resolutionIndex)));
+                if (GUILayout.Button(Loc.Ui(UiKeys.NextResolution), ButtonOptions()))
                 {
                     _resolutionIndex = (_resolutionIndex + 1) % _resolutions.Length;
                     var r = _resolutions[_resolutionIndex];
@@ -342,8 +357,18 @@ namespace ShatteredForge.Menu
                 }
             }
 
+            GUILayout.Space(10f);
+            if (LocalizationSettings.HasSettings && LocalizationSettings.SelectedLocale != null)
+            {
+                GUILayout.Label(Loc.UiFormat(UiKeys.LanguageLabel, LocalizationSettings.SelectedLocale.Identifier.Code));
+                if (GUILayout.Button(Loc.Ui(UiKeys.NextLanguage), ButtonOptions()))
+                {
+                    CycleSelectedLocale();
+                }
+            }
+
             GUILayout.Space(14f);
-            if (GUILayout.Button("Назад", ButtonOptions()))
+            if (GUILayout.Button(Loc.Ui(UiKeys.Back), ButtonOptions()))
             {
                 _state = ScreenState.Main;
             }
@@ -385,7 +410,7 @@ namespace ShatteredForge.Menu
         {
             if (string.IsNullOrEmpty(_activeProfileId))
             {
-                return "нет";
+                return Loc.Ui(UiKeys.CommonNone);
             }
 
             foreach (var profile in _profiles)
@@ -396,14 +421,46 @@ namespace ShatteredForge.Menu
                 }
             }
 
-            return "неизвестно";
+            return Loc.Ui(UiKeys.CommonUnknown);
+        }
+
+        private static void CycleSelectedLocale()
+        {
+            if (!LocalizationSettings.HasSettings)
+            {
+                return;
+            }
+
+            var locales = LocalizationSettings.AvailableLocales.Locales;
+            if (locales == null || locales.Count == 0)
+            {
+                return;
+            }
+
+            var currentCode = LocalizationSettings.SelectedLocale != null
+                ? LocalizationSettings.SelectedLocale.Identifier.Code
+                : string.Empty;
+
+            var index = 0;
+            for (var i = 0; i < locales.Count; i++)
+            {
+                if (locales[i] != null && locales[i].Identifier.Code == currentCode)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            var next = locales[(index + 1) % locales.Count];
+            LocalizationSettings.SelectedLocale = next;
+            LocalizationPreferences.SetSelectedLocaleCode(next.Identifier.Code);
         }
 
         private void TryEnterGameplay(string profileId, bool resumeExpedition)
         {
             if (resumeExpedition && !_profilesService.HasActiveExpedition(profileId))
             {
-                _status = "Нет активной вылазки для продолжения.";
+                _status = Loc.Ui(UiKeys.ErrorNoExpeditionToContinue);
                 return;
             }
 
@@ -422,20 +479,20 @@ namespace ShatteredForge.Menu
             }
 
             _state = ScreenState.Main;
-            _status = "Не удалось запустить игру: не настроена сцена геймплея.";
+            _status = Loc.Ui(UiKeys.ErrorGameplaySceneMissing);
         }
 
         private void DrawDeleteProfileControls()
         {
             if (string.IsNullOrEmpty(_activeProfileId))
             {
-                GUILayout.Label("Нет активного профиля для удаления.");
+                GUILayout.Label(Loc.Ui(UiKeys.NoActiveProfileToDelete));
                 return;
             }
 
             if (_deleteCandidateProfileId != _activeProfileId)
             {
-                if (GUILayout.Button("Удалить текущий профиль", ButtonOptions()))
+                if (GUILayout.Button(Loc.Ui(UiKeys.DeleteCurrentProfile), ButtonOptions()))
                 {
                     _deleteCandidateProfileId = _activeProfileId;
                 }
@@ -443,14 +500,14 @@ namespace ShatteredForge.Menu
                 return;
             }
 
-            GUILayout.Label($"Удалить активный профиль '{GetActiveProfileName()}'?");
+            GUILayout.Label(Loc.UiFormat(UiKeys.DeleteActiveProfilePrompt, GetActiveProfileName()));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Да, удалить", GUILayout.Height(30f)))
+            if (GUILayout.Button(Loc.Ui(UiKeys.YesDelete), GUILayout.Height(30f)))
             {
                 DeleteProfile(_activeProfileId);
             }
 
-            if (GUILayout.Button("Отмена", GUILayout.Height(30f)))
+            if (GUILayout.Button(Loc.Ui(UiKeys.Cancel), GUILayout.Height(30f)))
             {
                 _deleteCandidateProfileId = null;
             }
@@ -463,7 +520,7 @@ namespace ShatteredForge.Menu
             var wasDeleted = _profilesService.DeleteProfile(profileId);
             if (!wasDeleted)
             {
-                _status = "Удаление не удалось: профиль не найден.";
+                _status = Loc.Ui(UiKeys.ErrorDeleteNotFound);
                 _deleteCandidateProfileId = null;
                 return;
             }
@@ -482,7 +539,7 @@ namespace ShatteredForge.Menu
             }
 
             PlayerPrefs.Save();
-            _status = "Профиль удалён.";
+            _status = Loc.Ui(UiKeys.StatusProfileDeleted);
         }
 
         private void QuitGame()
@@ -517,11 +574,11 @@ namespace ShatteredForge.Menu
         {
             if (_resolutions == null || _resolutions.Length == 0)
             {
-                return "н/д";
+                return Loc.Ui(UiKeys.CommonNotApplicable);
             }
 
             var r = _resolutions[Mathf.Clamp(index, 0, _resolutions.Length - 1)];
-            return $"{r.width} x {r.height} @ {Mathf.RoundToInt((float)r.refreshRateRatio.value)}Гц";
+            return $"{r.width} x {r.height} @ {Mathf.RoundToInt((float)r.refreshRateRatio.value)}Hz";
         }
 
         private static GUIStyle HeaderStyle()

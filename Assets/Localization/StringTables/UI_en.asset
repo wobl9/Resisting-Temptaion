@@ -1,0 +1,224 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: UI_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 06ce138d3bf003f42bcf3f9a4e0bb38e, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 640671744
+    m_Localized: SHATTERED FORGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420480
+    m_Localized: Welcome to Shattered Forge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420481
+    m_Localized: New Game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420482
+    m_Localized: Continue Game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420483
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420484
+    m_Localized: Quit Game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420485
+    m_Localized: No active profile. Please select a profile.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420486
+    m_Localized: Select profile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420487
+    m_Localized: 'Profile: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420488
+    m_Localized: Profile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420489
+    m_Localized: 'Current: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420490
+    m_Localized: Profile menu opened.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420491
+    m_Localized: Switch profile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420492
+    m_Localized: Create new profile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420493
+    m_Localized: Select profile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420494
+    m_Localized: No profiles yet. Start a new game.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420495
+    m_Localized: 'Profile selected: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420496
+    m_Localized: '  (ACTIVE)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420497
+    m_Localized: Delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420498
+    m_Localized: Delete profile '{0}'?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420499
+    m_Localized: Yes, delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420500
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420501
+    m_Localized: New Game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420502
+    m_Localized: 'Profile name:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420503
+    m_Localized: Confirm and start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420504
+    m_Localized: Back
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420505
+    m_Localized: New expedition
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420506
+    m_Localized: 'Profile: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420507
+    m_Localized: You have an active expedition. Start a new expedition and replace
+      the current one?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420508
+    m_Localized: Yes, start a new expedition
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420509
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420510
+    m_Localized: 'Volume: {0}%'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420511
+    m_Localized: 'Fullscreen: ON'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420512
+    m_Localized: 'Fullscreen: OFF'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420513
+    m_Localized: 'Resolution: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420514
+    m_Localized: Next resolution
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420515
+    m_Localized: 'Language: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420516
+    m_Localized: Change language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420517
+    m_Localized: Delete current profile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420518
+    m_Localized: Delete active profile '{0}'?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420519
+    m_Localized: No active profile to delete.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420520
+    m_Localized: No active expedition to continue.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420521
+    m_Localized: 'Failed to start: gameplay scene is not configured.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420522
+    m_Localized: 'Delete failed: profile not found.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420523
+    m_Localized: Profile deleted.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420524
+    m_Localized: 'Created profile: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420525
+    m_Localized: none
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420526
+    m_Localized: unknown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420527
+    m_Localized: n/a
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420528
+    m_Localized: New Hunter
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

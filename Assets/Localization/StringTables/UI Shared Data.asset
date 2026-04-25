@@ -1,0 +1,228 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: UI Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: UI
+  m_TableCollectionNameGuidString: 06ce138d3bf003f42bcf3f9a4e0bb38e
+  m_Entries:
+  - m_Id: 640671744
+    m_Key: GAME_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420480
+    m_Key: WELCOME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420481
+    m_Key: NEW_GAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420482
+    m_Key: CONTINUE_GAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420483
+    m_Key: SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420484
+    m_Key: QUIT_GAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420485
+    m_Key: NO_ACTIVE_PROFILE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420486
+    m_Key: SELECT_PROFILE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420487
+    m_Key: PROFILE_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420488
+    m_Key: PROFILE_MENU_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420489
+    m_Key: PROFILE_MENU_CURRENT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420490
+    m_Key: PROFILE_MENU_OPENED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420491
+    m_Key: SWITCH_PROFILE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420492
+    m_Key: CREATE_NEW_PROFILE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420493
+    m_Key: PROFILES_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420494
+    m_Key: PROFILES_EMPTY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420495
+    m_Key: PROFILE_SELECTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420496
+    m_Key: ACTIVE_SUFFIX
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420497
+    m_Key: DELETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420498
+    m_Key: DELETE_PROFILE_PROMPT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420499
+    m_Key: YES_DELETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420500
+    m_Key: CANCEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420501
+    m_Key: NEW_PROFILE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420502
+    m_Key: PROFILE_NAME_LABEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420503
+    m_Key: CONFIRM_AND_START
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420504
+    m_Key: BACK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420505
+    m_Key: NEW_EXPEDITION_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420506
+    m_Key: NEW_EXPEDITION_PROFILE_LINE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420507
+    m_Key: NEW_EXPEDITION_PROMPT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420508
+    m_Key: NEW_EXPEDITION_CONFIRM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420509
+    m_Key: SETTINGS_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420510
+    m_Key: VOLUME_LABEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420511
+    m_Key: FULLSCREEN_ON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420512
+    m_Key: FULLSCREEN_OFF
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420513
+    m_Key: RESOLUTION_LABEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420514
+    m_Key: NEXT_RESOLUTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420515
+    m_Key: LANGUAGE_LABEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420516
+    m_Key: NEXT_LANGUAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420517
+    m_Key: DELETE_CURRENT_PROFILE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420518
+    m_Key: DELETE_ACTIVE_PROFILE_PROMPT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420519
+    m_Key: NO_ACTIVE_PROFILE_TO_DELETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420520
+    m_Key: ERROR_NO_EXPEDITION_TO_CONTINUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420521
+    m_Key: ERROR_GAMEPLAY_SCENE_MISSING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420522
+    m_Key: ERROR_DELETE_NOT_FOUND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420523
+    m_Key: STATUS_PROFILE_DELETED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420524
+    m_Key: STATUS_PROFILE_CREATED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420525
+    m_Key: COMMON_NONE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420526
+    m_Key: COMMON_UNKNOWN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420527
+    m_Key: COMMON_NOT_APPLICABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420528
+    m_Key: DEFAULT_NEW_PROFILE_NAME
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 4078310213405638742
+  references:
+    version: 2
+    RefIds:
+    - rid: 4078310213405638742
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1777149926636
