@@ -219,6 +219,18 @@ MonoBehaviour:
     m_Key: LOADING_GAMEPLAY
     m_Metadata:
       m_Items: []
+  - m_Id: 678420530
+    m_Key: LOADING_ERROR_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420531
+    m_Key: LOADING_BACK_TO_MENU
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420532
+    m_Key: BOOT_OPENING_LINE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -113,6 +113,7 @@ namespace ShatteredForge.EditorTools
             }
 
             Set(UiKeys.GameTitle, "SHATTERED FORGE", "SHATTERED FORGE");
+            Set(UiKeys.BootOpeningLine, "Кузня пробуждается…", "The forge stirs…");
             Set(UiKeys.Welcome, "Добро пожаловать в Shattered Forge", "Welcome to Shattered Forge");
 
             Set(UiKeys.NewGame, "Новая игра", "New Game");
@@ -166,6 +167,8 @@ namespace ShatteredForge.EditorTools
             Set(UiKeys.ErrorNoExpeditionToContinue, "Нет активной вылазки для продолжения.", "No active expedition to continue.");
             Set(UiKeys.ErrorGameplaySceneMissing, "Не удалось запустить игру: не настроена сцена геймплея.", "Failed to start: gameplay scene is not configured.");
             Set(UiKeys.LoadingGameplay, "Загрузка...", "Loading...");
+            Set(UiKeys.LoadingErrorTitle, "Ошибка загрузки сцены", "Scene load error");
+            Set(UiKeys.LoadingBackToMenu, "В меню", "Back to menu");
             Set(UiKeys.ErrorDeleteNotFound, "Удаление не удалось: профиль не найден.", "Delete failed: profile not found.");
 
             Set(UiKeys.StatusProfileDeleted, "Профиль удалён.", "Profile deleted.");

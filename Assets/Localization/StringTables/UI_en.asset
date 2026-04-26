@@ -223,6 +223,18 @@ MonoBehaviour:
     m_Localized: Loading...
     m_Metadata:
       m_Items: []
+  - m_Id: 678420530
+    m_Localized: Scene load error
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420531
+    m_Localized: Back to menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 678420532
+    m_Localized: The forge stirs…
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
