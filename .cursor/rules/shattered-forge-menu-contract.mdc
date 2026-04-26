@@ -1,0 +1,27 @@
+---
+description: Enforce Shattered Forge main menu contract + glossary when editing menu/profile flow
+globs:
+  - Assets/Scripts/Menu/**/*.cs
+  - Assets/Scripts/Localization/**/*.cs
+  - Assets/Scripts/Prototype/PlayableLoopDemo.cs
+alwaysApply: false
+---
+
+# Shattered Forge — Main Menu Contract Rule
+
+## Source of truth
+- Treat `Docs/ShatteredForge/Menu_logic_contract.md` as the **canonical behavioral contract** for the start menu, profiles, and expedition resume rules.
+- Treat `Docs/ShatteredForge/Menu_logic_contract.md` “Glossary (RU UI ↔ EN canonical)” as the **canonical naming map** between Russian UI strings and English identifiers used in docs/code comments.
+
+## Required workflow (menu/profile changes)
+- Before changing behavior: read/reconcile with `Menu_logic_contract.md` (especially invariants + scenario IDs).
+- After changing behavior: update `Menu_logic_contract.md` in the same PR/session (scenarios/decision table/status labels) so docs never lag code.
+- If UX copy is Russian but identifiers are English: keep English identifiers stable; update RU labels in UI and mirror mapping in the glossary table if needed.
+
+## Non-negotiables (do not regress)
+- First launch with no profiles: only `New Game`, `Settings`, `Quit Game` (no `Continue`).
+- `Continue` must be **hidden** unless an active expedition exists for the active profile (not disabled-in-place).
+- Never write stale `PlayerPrefs["sf.active_profile_id"]` after profile deletion; keep profile index + prefs consistent.
+
+## QA hook
+- When validating menu wiring, prefer running `MenuContractSmokeTestRunner` / editor smoke menu item described in `Docs/ShatteredForge/Main_menu_setup.md` (if present in the repo).
