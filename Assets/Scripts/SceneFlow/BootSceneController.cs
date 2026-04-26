@@ -9,20 +9,48 @@ namespace ShatteredForge.SceneFlow
     /// <summary>
     /// Cold-start splash before the main menu: distinct visuals from <see cref="LoadingSceneController"/>.
     /// </summary>
-    [DefaultExecutionOrder(500)]
+    [DefaultExecutionOrder(-2000)]
     public sealed class BootSceneController : MonoBehaviour
     {
-        private static readonly Color TopGradient = new Color(0.16f, 0.06f, 0.09f, 1f);
-        private static readonly Color BottomGradient = new Color(0.02f, 0.02f, 0.03f, 1f);
-        private static readonly Color AccentGold = new Color(0.79f, 0.64f, 0.15f, 1f);
-        private static readonly Color MutedText = new Color(0.55f, 0.52f, 0.48f, 1f);
+        [Header("Copy (no Unity Localization package on boot)")]
+        [SerializeField] private string bootTitle = "SHATTERED FORGE";
 
+        [SerializeField] private string subtitleRu = "Кузня пробуждается…";
+
+        [SerializeField] private string subtitleEn = "The forge stirs…";
+
+        [SerializeField] private string errorTitleRu = "Ошибка загрузки сцены";
+
+        [SerializeField] private string errorTitleEn = "Scene load error";
+
+        [SerializeField] private string backToMenuRu = "В меню";
+
+        [SerializeField] private string backToMenuEn = "Back to menu";
+
+        [Header("Colors")]
+        [SerializeField] private Color topGradient = new Color(0.16f, 0.06f, 0.09f, 1f);
+
+        [SerializeField] private Color bottomGradient = new Color(0.02f, 0.02f, 0.03f, 1f);
+
+        [SerializeField] private Color accentGold = new Color(0.79f, 0.64f, 0.15f, 1f);
+
+        [SerializeField] private Color mutedText = new Color(0.55f, 0.52f, 0.48f, 1f);
+
+        [Header("Timing")]
         [SerializeField] [Min(0f)] private float minDisplaySeconds = 0.85f;
 
         [SerializeField] [Min(1f)] private float maxWaitSeconds = 45f;
 
         private string _errorMessage;
         private bool _finished;
+
+        private int _cachedScreenW = -1;
+        private int _cachedScreenH = -1;
+        private GUIStyle _titleStyle;
+        private GUIStyle _subtitleStyle;
+        private GUIStyle _errorTitleStyle;
+        private float _cachedTitleH;
+        private float _cachedSubtitleH;
 
         private void Start()
         {
@@ -72,16 +100,17 @@ namespace ShatteredForge.SceneFlow
             }
         }
 
-        private static void DrawGradientBackdrop()
+        private void DrawGradientBackdrop()
         {
-            const int strips = 24;
-            var h = Screen.height / (float)strips;
-            for (var i = 0; i < strips; i++)
+            var w = Screen.width;
+            var h = Screen.height;
+            var band = h / 3f;
+            for (var i = 0; i < 3; i++)
             {
-                var t = i / (float)(strips - 1);
-                var c = Color.Lerp(TopGradient, BottomGradient, t);
+                var t = i == 0 ? 0.12f : i == 1 ? 0.5f : 0.88f;
+                var c = Color.Lerp(topGradient, bottomGradient, t);
                 GUI.DrawTexture(
-                    new Rect(0f, i * h, Screen.width, h + 1f),
+                    new Rect(0f, i * band, w, band + 1f),
                     Texture2D.whiteTexture,
                     ScaleMode.StretchToFill,
                     false,
@@ -92,8 +121,49 @@ namespace ShatteredForge.SceneFlow
             }
         }
 
+        private void EnsureChromeLayout()
+        {
+            if (Screen.width == _cachedScreenW && Screen.height == _cachedScreenH && _titleStyle != null)
+            {
+                return;
+            }
+
+            _cachedScreenW = Screen.width;
+            _cachedScreenH = Screen.height;
+
+            var titleFont = Mathf.Clamp(34 + _cachedScreenW / 80, 28, 46);
+            _titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = titleFont,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = accentGold }
+            };
+
+            _subtitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 15,
+                fontStyle = FontStyle.Italic,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = mutedText }
+            };
+
+            _errorTitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 20,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = accentGold }
+            };
+
+            var sub = SubtitleForPreviewLocale();
+            _cachedTitleH = _titleStyle.CalcHeight(new GUIContent(bootTitle), _cachedScreenW);
+            _cachedSubtitleH = _subtitleStyle.CalcHeight(new GUIContent(sub), _cachedScreenW);
+        }
+
         private void DrawBootChrome()
         {
+            EnsureChromeLayout();
+
             var lineW = Mathf.Min(280f, Screen.width - 120f);
             var lineX = (Screen.width - lineW) * 0.5f;
             var lineY = Screen.height * 0.58f;
@@ -103,34 +173,27 @@ namespace ShatteredForge.SceneFlow
                 ScaleMode.StretchToFill,
                 false,
                 0f,
-                AccentGold * new Color(1f, 1f, 1f, 0.85f),
+                accentGold * new Color(1f, 1f, 1f, 0.85f),
                 0f,
                 0f);
 
-            // Avoid Unity Localization on this scene: synchronous init blocks the main thread for ~1–2s and freezes IMGUI.
-            var title = BootCopy.Title;
-            var titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = Mathf.Clamp(34 + Screen.width / 80, 28, 46),
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = AccentGold }
-            };
-            var titleH = titleStyle.CalcHeight(new GUIContent(title), Screen.width);
-            GUI.Label(new Rect(0f, Screen.height * 0.36f, Screen.width, titleH + 12f), title, titleStyle);
+            GUI.Label(
+                new Rect(0f, Screen.height * 0.36f, Screen.width, _cachedTitleH + 12f),
+                bootTitle,
+                _titleStyle);
 
-            var subStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 15,
-                fontStyle = FontStyle.Italic,
-                alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = MutedText }
-            };
-            var sub = BootCopy.Subtitle;
-            var subH = subStyle.CalcHeight(new GUIContent(sub), Screen.width);
-            GUI.Label(new Rect(0f, Screen.height * 0.36f + titleH + 18f, Screen.width, subH + 8f), sub, subStyle);
+            var sub = SubtitleForPreviewLocale();
+            GUI.Label(
+                new Rect(0f, Screen.height * 0.36f + _cachedTitleH + 18f, Screen.width, _cachedSubtitleH + 8f),
+                sub,
+                _subtitleStyle);
 
             DrawOrbitalDots();
+        }
+
+        private string SubtitleForPreviewLocale()
+        {
+            return LocalePreferencePreview.PreferCyrillicUi() ? subtitleRu : subtitleEn;
         }
 
         private static void DrawOrbitalDots()
@@ -162,16 +225,19 @@ namespace ShatteredForge.SceneFlow
 
         private void DrawErrorUi()
         {
+            EnsureChromeLayout();
+
             const float width = 520f;
             var x = (Screen.width - width) * 0.5f;
             var y = Screen.height * 0.38f;
             GUILayout.BeginArea(new Rect(x, y, width, 200f));
-            var h = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold, normal = { textColor = AccentGold } };
-            GUILayout.Label(BootCopy.ErrorTitle, h);
+            var errTitle = LocalePreferencePreview.PreferCyrillicUi() ? errorTitleRu : errorTitleEn;
+            GUILayout.Label(errTitle, _errorTitleStyle);
             GUILayout.Space(10f);
             GUILayout.TextArea(_errorMessage, GUILayout.Height(72f));
             GUILayout.Space(10f);
-            if (GUILayout.Button(BootCopy.BackToMenu, GUILayout.Height(32f)))
+            var back = LocalePreferencePreview.PreferCyrillicUi() ? backToMenuRu : backToMenuEn;
+            if (GUILayout.Button(back, GUILayout.Height(32f)))
             {
                 SceneManager.LoadScene(SceneNames.DefaultMenu, LoadSceneMode.Single);
             }
@@ -269,25 +335,6 @@ namespace ShatteredForge.SceneFlow
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Lightweight copy for boot only — matches table strings; keeps boot scene free of Localization package work on startup.
-        /// </summary>
-        private static class BootCopy
-        {
-            public static string Title => "SHATTERED FORGE";
-
-            public static string Subtitle =>
-                PreferCyrillicUi() ? "Кузня пробуждается…" : "The forge stirs…";
-
-            public static string ErrorTitle =>
-                PreferCyrillicUi() ? "Ошибка загрузки сцены" : "Scene load error";
-
-            public static string BackToMenu =>
-                PreferCyrillicUi() ? "В меню" : "Back to menu";
-
-            private static bool PreferCyrillicUi() => LocalePreferencePreview.PreferCyrillicUi();
         }
     }
 }
