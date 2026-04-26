@@ -22,6 +22,9 @@ namespace ShatteredForge.Combat
         [SerializeField] private float cameraHeight = 22f;
         [SerializeField] private float cameraBackOffset = -16f;
 
+        [Header("Flow")]
+        [SerializeField] private bool autoAdvanceNonCombatRooms = true;
+
         private void Awake()
         {
             if (loopDemo == null)
@@ -61,7 +64,7 @@ namespace ShatteredForge.Combat
                 return;
             }
 
-            if (_nonCombatWaiting && DemoInput.KeyDown(Key.Space))
+            if (_nonCombatWaiting && (autoAdvanceNonCombatRooms || DemoInput.KeyDown(Key.Space)))
             {
                 _nonCombatWaiting = false;
                 _roomStarted = false;

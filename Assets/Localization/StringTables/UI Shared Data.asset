@@ -215,6 +215,10 @@ MonoBehaviour:
     m_Key: DEFAULT_NEW_PROFILE_NAME
     m_Metadata:
       m_Items: []
+  - m_Id: 678420529
+    m_Key: LOADING_GAMEPLAY
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

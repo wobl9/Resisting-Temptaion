@@ -74,6 +74,7 @@ namespace ShatteredForge.Prototype
                 _profileId = string.Empty;
                 _account = BuildInitialAccount();
                 _lastOutcome = "No profile loaded (demo fallback).";
+                BootstrapFreshExpedition();
                 return;
             }
 
@@ -92,7 +93,6 @@ namespace ShatteredForge.Prototype
             if (resumeExpedition && _profile.hasActiveExpedition)
             {
                 RestoreExpeditionFromProfile(_profile);
-                combatBootstrap?.OnRunStartedOrRoomAdvanced();
                 _lastOutcome = "Expedition resumed.";
                 PersistAccount();
                 PersistExpedition();
@@ -108,6 +108,14 @@ namespace ShatteredForge.Prototype
             BootstrapFreshExpedition();
             PersistAccount();
             PersistExpedition();
+        }
+
+        private void Start()
+        {
+            if (IsInRun)
+            {
+                combatBootstrap?.OnRunStartedOrRoomAdvanced();
+            }
         }
 
         private void Update()
@@ -296,7 +304,7 @@ namespace ShatteredForge.Prototype
             GUI.Label(new Rect(x, y, 1200, line), $"Last outcome: {_lastOutcome}");
             y += line + 8;
             var controls = combatBootstrap != null
-                ? "WASD move | Auto-fire at nearest enemy | R Start | E Extract | K Die | Space non-combat rooms | H hub after run"
+                ? "WASD move | Auto-fire at nearest enemy | R Start (hub) | E Extract | K Die | H hub after run"
                 : "Controls: R - Start Run, C - Clear Room, E - Extract, K - Die | H hub after run";
             GUI.Label(new Rect(x, y, 1200, line), controls);
         }
@@ -328,8 +336,6 @@ namespace ShatteredForge.Prototype
             _rooms = _runGenerator.GenerateAct(UnityEngine.Random.Range(minRoomsPerAct, maxRoomsPerAct + 1));
             _state = DemoState.InRun;
             _lastOutcome = "Run started.";
-
-            combatBootstrap?.OnRunStartedOrRoomAdvanced();
         }
 
         private static AccountState BuildInitialAccount()

@@ -1,13 +1,18 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using ShatteredForge.Localization;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
+using UnityEngine.SceneManagement;
 
 namespace ShatteredForge.Menu
 {
     public class MainMenuController : MonoBehaviour
     {
+        private static readonly Color MenuBackdropColor = new Color(0.078431375f, 0.078431375f, 0.09019608f, 1f);
+
         private enum ScreenState
         {
             Main,
@@ -42,6 +47,9 @@ namespace ShatteredForge.Menu
         private Resolution[] _resolutions;
         private int _resolutionIndex;
 
+        private bool _loadingGameplay;
+        private float _loadProgress;
+
         private void Awake()
         {
             _profilesService = ProfileStorageFactory.Create(
@@ -68,6 +76,25 @@ namespace ShatteredForge.Menu
 
         private void OnGUI()
         {
+            if (Event.current.type == EventType.Repaint)
+            {
+                DrawMenuBackdrop();
+            }
+
+            if (_loadingGameplay)
+            {
+                if (Event.current.type == EventType.Repaint)
+                {
+                    DrawLoadingOverlay();
+                }
+                else if (Event.current.type != EventType.Layout)
+                {
+                    Event.current.Use();
+                }
+
+                return;
+            }
+
             DrawActiveProfileEntry();
 
             const float width = 560f;
@@ -75,7 +102,12 @@ namespace ShatteredForge.Menu
             var y = 60f;
             var rect = new Rect(x, y, width, Screen.height - 120f);
 
-            GUI.Box(rect, "");
+            // Do not use GUI.Box here: it registers a full-rect control and steals mouse hover/clicks from GUILayout buttons inside BeginArea.
+            if (Event.current.type == EventType.Repaint)
+            {
+                GUI.skin.box.Draw(rect, GUIContent.none, false, false, false, false);
+            }
+
             GUILayout.BeginArea(new Rect(rect.x + 24f, rect.y + 24f, rect.width - 48f, rect.height - 48f));
             GUILayout.Label(Loc.Ui(UiKeys.GameTitle), HeaderStyle());
             GUILayout.Space(8f);
@@ -466,6 +498,11 @@ namespace ShatteredForge.Menu
 
         private void TryEnterGameplay(string profileId, bool resumeExpedition)
         {
+            if (_loadingGameplay)
+            {
+                return;
+            }
+
             if (resumeExpedition && !_profilesService.HasActiveExpedition(profileId))
             {
                 _status = Loc.Ui(UiKeys.ErrorNoExpeditionToContinue);
@@ -477,17 +514,124 @@ namespace ShatteredForge.Menu
             var sceneToLoad = gameplaySceneName;
             if (string.IsNullOrWhiteSpace(sceneToLoad))
             {
-                sceneToLoad = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                sceneToLoad = SceneManager.GetActiveScene().name;
             }
 
             if (!string.IsNullOrWhiteSpace(sceneToLoad))
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(sceneToLoad);
+                StartCoroutine(LoadGameplaySceneCoroutine(sceneToLoad));
                 return;
             }
 
             _state = ScreenState.Main;
             _status = Loc.Ui(UiKeys.ErrorGameplaySceneMissing);
+        }
+
+        private void DrawMenuBackdrop()
+        {
+            var prevDepth = GUI.depth;
+            GUI.depth = 10000;
+            GUI.DrawTexture(
+                new Rect(0f, 0f, Screen.width, Screen.height),
+                Texture2D.whiteTexture,
+                ScaleMode.StretchToFill,
+                false,
+                0f,
+                MenuBackdropColor,
+                0f,
+                0f);
+            GUI.depth = prevDepth;
+        }
+
+        private void DrawLoadingOverlay()
+        {
+            var dim = new Color(0f, 0f, 0f, 0.5f);
+            var prevDepth = GUI.depth;
+            GUI.depth = 5000;
+            GUI.DrawTexture(
+                new Rect(0f, 0f, Screen.width, Screen.height),
+                Texture2D.whiteTexture,
+                ScaleMode.StretchToFill,
+                false,
+                0f,
+                dim,
+                0f,
+                0f);
+
+            var title = Loc.Ui(UiKeys.LoadingGameplay);
+            var style = HeaderStyle();
+            style.alignment = TextAnchor.MiddleCenter;
+            var titleH = style.CalcHeight(new GUIContent(title), Screen.width);
+            GUI.Label(new Rect(0f, Screen.height * 0.42f, Screen.width, titleH + 8f), title, style);
+
+            var barW = Mathf.Min(480f, Screen.width - 80f);
+            var barX = (Screen.width - barW) * 0.5f;
+            var barY = Screen.height * 0.52f;
+            var barRect = new Rect(barX, barY, barW, 12f);
+            GUI.DrawTexture(
+                barRect,
+                Texture2D.whiteTexture,
+                ScaleMode.StretchToFill,
+                false,
+                0f,
+                new Color(0.15f, 0.15f, 0.18f, 0.9f),
+                0f,
+                0f);
+            var inner = new Rect(barRect.x + 2f, barRect.y + 2f, (barRect.width - 4f) * _loadProgress, barRect.height - 4f);
+            if (inner.width > 0.5f)
+            {
+                GUI.DrawTexture(
+                    inner,
+                    Texture2D.whiteTexture,
+                    ScaleMode.StretchToFill,
+                    false,
+                    0f,
+                    new Color(0.45f, 0.65f, 0.9f, 1f),
+                    0f,
+                    0f);
+            }
+
+            GUI.depth = prevDepth;
+        }
+
+        private IEnumerator LoadGameplaySceneCoroutine(string sceneName)
+        {
+            _loadingGameplay = true;
+            _loadProgress = 0f;
+            yield return null;
+
+            AsyncOperation op;
+            try
+            {
+                op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            }
+            catch (Exception)
+            {
+                _loadingGameplay = false;
+                _loadProgress = 0f;
+                _status = Loc.Ui(UiKeys.ErrorGameplaySceneMissing);
+                yield break;
+            }
+
+            if (op == null)
+            {
+                _loadingGameplay = false;
+                _loadProgress = 0f;
+                _status = Loc.Ui(UiKeys.ErrorGameplaySceneMissing);
+                yield break;
+            }
+
+            op.allowSceneActivation = false;
+            while (op.progress < 0.9f)
+            {
+                _loadProgress = Mathf.Clamp01(op.progress / 0.9f);
+                yield return null;
+            }
+
+            _loadProgress = 1f;
+            yield return null;
+            op.allowSceneActivation = true;
+            yield return op;
         }
 
         private void DrawDeleteProfileControls()
