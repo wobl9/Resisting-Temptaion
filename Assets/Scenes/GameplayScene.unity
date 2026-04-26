@@ -394,6 +394,7 @@ GameObject:
   - component: {fileID: 786048976}
   - component: {fileID: 786048975}
   - component: {fileID: 786048974}
+  - component: {fileID: 786048977}
   m_Layer: 0
   m_Name: GameBoostrap
   m_TagString: Untagged
@@ -418,6 +419,7 @@ MonoBehaviour:
   startingHpPercent: 100
   autoInsureFirstItem: 1
   combatBootstrap: {fileID: 0}
+  itemCatalog: {fileID: 11400000, guid: f0e1d2c3b4a59687786955443322110f, type: 2}
 --- !u!114 &786048975
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -435,6 +437,19 @@ MonoBehaviour:
   cameraPitch: 56
   cameraHeight: 22
   cameraBackOffset: -16
+--- !u!114 &786048977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786048973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4a3f2e1d09876543210fedcba987601, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.UI.PlayerInventoryPanel
+  toggleKey: 3
 --- !u!4 &786048976
 Transform:
   m_ObjectHideFlags: 0

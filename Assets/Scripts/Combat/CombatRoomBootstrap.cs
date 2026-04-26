@@ -24,6 +24,11 @@ namespace ShatteredForge.Combat
 
         [Header("Flow")]
         [SerializeField] private bool autoAdvanceNonCombatRooms = true;
+        [Header("Enemy stats")]
+        [Tooltip("If null, loads Resources/Items/DefaultEnemyStatProfileCatalog.")]
+        [SerializeField] private EnemyStatProfileCatalog enemyStatCatalog;
+        [Header("Debug")]
+        [SerializeField] private bool showEnemyDebugOverlay = true;
 
         private void Awake()
         {
@@ -35,6 +40,11 @@ namespace ShatteredForge.Combat
             if (loopDemo == null)
             {
                 loopDemo = FindFirstObjectByType<PlayableLoopDemo>();
+            }
+
+            if (enemyStatCatalog == null)
+            {
+                enemyStatCatalog = Resources.Load<EnemyStatProfileCatalog>("Items/DefaultEnemyStatProfileCatalog");
             }
         }
 
@@ -150,10 +160,59 @@ namespace ShatteredForge.Combat
         {
             if (!_nonCombatWaiting || string.IsNullOrEmpty(_nonCombatHint))
             {
+                DrawEnemyDebugOverlay();
                 return;
             }
 
             GUI.Label(new Rect(20, 200, 800, 28), _nonCombatHint);
+            DrawEnemyDebugOverlay();
+        }
+
+        private void DrawEnemyDebugOverlay()
+        {
+            if (!showEnemyDebugOverlay || _enemies.Count == 0 || Camera.main == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _enemies.Count; i++)
+            {
+                var enemy = _enemies[i];
+                if (enemy == null || enemy.IsDead)
+                {
+                    continue;
+                }
+
+                var world = enemy.transform.position + Vector3.up * 2.35f;
+                var screen = Camera.main.WorldToScreenPoint(world);
+                if (screen.z <= 0f)
+                {
+                    continue;
+                }
+
+                var x = screen.x - 75f;
+                var y = Screen.height - screen.y - 32f;
+                var stats = enemy.CurrentStats;
+                var dmg = stats?.damage ?? 0;
+                var arm = stats?.armor ?? 0;
+                var res = stats?.elementalResists;
+                var fire = res?.fire ?? 0;
+                var cold = res?.cold ?? 0;
+                var lightning = res?.lightning ?? 0;
+
+                var healthRatio = enemy.MaxHealth > 0.001f ? Mathf.Clamp01(enemy.CurrentHealth / enemy.MaxHealth) : 0f;
+                var prevColor = GUI.color;
+                GUI.color = healthRatio switch
+                {
+                    > 0.66f => new Color(0.6f, 1f, 0.6f),
+                    > 0.33f => new Color(1f, 0.9f, 0.45f),
+                    _ => new Color(1f, 0.45f, 0.45f)
+                };
+
+                var label = $"HP {enemy.CurrentHealth:0.0}/{enemy.MaxHealth:0.0}  DMG {dmg}  ARM {arm}  RES F/C/L {fire}/{cold}/{lightning}";
+                GUI.Label(new Rect(x, y, 320f, 24f), label);
+                GUI.color = prevColor;
+            }
         }
 
         private void EnsureWorld()
@@ -247,6 +306,7 @@ namespace ShatteredForge.Combat
             if (_player != null)
             {
                 _player.BindRun(run, () => loopDemo.ApplyPlayerDeathFromGameplay());
+                _player.BindStatsProvider(() => loopDemo != null ? loopDemo.CurrentComputedStats : null);
                 return;
             }
 
@@ -263,13 +323,15 @@ namespace ShatteredForge.Combat
             _player = body.AddComponent<SimplePlayerController>();
             _player.SetProjectileTemplate(_projectileTemplate);
             _player.BindRun(run, () => loopDemo.ApplyPlayerDeathFromGameplay());
+            _player.BindStatsProvider(() => loopDemo != null ? loopDemo.CurrentComputedStats : null);
         }
 
         private void SpawnGrunts(int count, float hp, float speed)
         {
+            var profile = ResolveEnemyProfile("grunt", hp, speed);
             for (var i = 0; i < count; i++)
             {
-                var e = CreateEnemy($"Grunt_{i}", hp, speed);
+                var e = CreateEnemy($"Grunt_{i}", profile);
                 var ring = Random.Range(0f, Mathf.PI * 2f);
                 var dist = Random.Range(6f, 9f);
                 e.transform.position = new Vector3(Mathf.Cos(ring) * dist, 0f, Mathf.Sin(ring) * dist);
@@ -278,19 +340,40 @@ namespace ShatteredForge.Combat
 
         private void SpawnElite(float hp, float speed)
         {
-            var e = CreateEnemy("Elite", hp, speed);
+            var profile = ResolveEnemyProfile("elite", hp, speed);
+            var e = CreateEnemy("Elite", profile);
             e.transform.localScale = Vector3.one * 1.35f;
             e.transform.position = new Vector3(7f, 0f, 2f);
         }
 
         private void SpawnBoss(float hp, float speed)
         {
-            var e = CreateEnemy("Boss", hp, speed);
+            var profile = ResolveEnemyProfile("boss", hp, speed);
+            var e = CreateEnemy("Boss", profile);
             e.transform.localScale = Vector3.one * 2.2f;
             e.transform.position = new Vector3(8f, 0f, 0f);
         }
 
-        private SimpleEnemy CreateEnemy(string name, float hp, float speed)
+        private EnemyStatProfileCatalog.Entry ResolveEnemyProfile(string id, float fallbackHp, float fallbackSpeed)
+        {
+            if (enemyStatCatalog != null && enemyStatCatalog.TryGet(id, out var entry) && entry != null)
+            {
+                return entry;
+            }
+
+            return new EnemyStatProfileCatalog.Entry
+            {
+                id = id,
+                health = fallbackHp,
+                moveSpeed = fallbackSpeed,
+                contactDamage = 0.06f,
+                contactCooldown = 0.9f,
+                primaryStats = CharacterPrimaryStats.CreateDefault(),
+                flatBonuses = new FlatStatBonuses()
+            };
+        }
+
+        private SimpleEnemy CreateEnemy(string name, EnemyStatProfileCatalog.Entry profile)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = name;
@@ -315,7 +398,13 @@ namespace ShatteredForge.Combat
             }
 
             var enemy = go.AddComponent<SimpleEnemy>();
-            enemy.Configure(hp, speed);
+            enemy.Configure(
+                profile.health,
+                profile.moveSpeed,
+                profile.contactDamage,
+                profile.contactCooldown,
+                profile.primaryStats,
+                profile.flatBonuses);
             enemy.SetTarget(_player.transform);
             _enemies.Add(enemy);
             return enemy;

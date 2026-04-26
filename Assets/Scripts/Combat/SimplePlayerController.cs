@@ -24,6 +24,7 @@ namespace ShatteredForge.Combat
         private SimpleProjectile _projectileTemplate;
         private RunState _runState;
         private Action _onDeath;
+        private Func<ComputedCharacterStats> _statsProvider;
         private float _nextFire;
         private Vector3 _lastMoveDir = Vector3.forward;
 
@@ -65,6 +66,11 @@ namespace ShatteredForge.Combat
         {
             _runState = runState;
             _onDeath = onDeath;
+        }
+
+        public void BindStatsProvider(Func<ComputedCharacterStats> statsProvider)
+        {
+            _statsProvider = statsProvider;
         }
 
         private void Update()
@@ -110,7 +116,9 @@ namespace ShatteredForge.Combat
                 return;
             }
 
-            _runState.hpState = Mathf.Clamp01(_runState.hpState - normalizedAmount);
+            var armorMitigation = _statsProvider?.Invoke()?.armor ?? 0;
+            var mitigated = Mathf.Max(0.01f, normalizedAmount - armorMitigation * 0.0008f);
+            _runState.hpState = Mathf.Clamp01(_runState.hpState - mitigated);
             if (_runState.hpState <= 0.01f)
             {
                 _onDeath?.Invoke();
@@ -138,6 +146,11 @@ namespace ShatteredForge.Combat
 
             var proj = Instantiate(_projectileTemplate, origin, Quaternion.LookRotation(dir));
             proj.gameObject.SetActive(true);
+            var stats = _statsProvider?.Invoke();
+            if (stats != null)
+            {
+                proj.damage = Mathf.Max(1f, stats.damage * 0.12f);
+            }
             var rb = proj.GetComponent<Rigidbody>();
             rb.linearVelocity = dir * 18f;
         }

@@ -2,8 +2,10 @@ using System;
 using ShatteredForge.Combat;
 using ShatteredForge.Core;
 using ShatteredForge.Input;
+using ShatteredForge.Items;
 using ShatteredForge.Menu;
 using ShatteredForge.Progression;
+using ShatteredForge.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Object = UnityEngine.Object;
@@ -41,6 +43,10 @@ namespace ShatteredForge.SceneFlow
         [SerializeField] private Transform dungeonAnchor;
         [SerializeField] [Min(0.5f)] private float interactRadius = 2.2f;
 
+        [Header("Items")]
+        [Tooltip("If null, loads Resources/Items/DefaultItemCatalog.")]
+        [SerializeField] private ItemCatalog itemCatalog;
+
         private IProfileStorage _profilesService;
         private string _profileId;
         private ProfileData _profile;
@@ -50,9 +56,21 @@ namespace ShatteredForge.SceneFlow
         private string _status = string.Empty;
         private bool _stubPanelOpen;
         private NearKind _stubPanelKind;
+        private PlayerInventoryPanel _inventoryPanel;
+        private CampCharacterSheetPanel _characterSheet;
 
         private void Awake()
         {
+            ItemCatalogRuntime.Current = itemCatalog != null
+                ? itemCatalog
+                : Resources.Load<ItemCatalog>("Items/DefaultItemCatalog");
+            ItemStatBonusCatalogRuntime.Current = Resources.Load<ItemStatBonusCatalog>("Items/DefaultItemStatBonusCatalog");
+            if (ItemCatalogRuntime.Current == null)
+            {
+                Debug.LogWarning(
+                    $"{nameof(CampHubController)}: ItemCatalog not assigned and Resources.Load(\"Items/DefaultItemCatalog\") failed. Item names / camp slots may be limited.");
+            }
+
             _profilesService = ProfileStorageFactory.Create(
                 profileStorageMode,
                 remoteProfileStorageBaseUrl,
@@ -64,12 +82,17 @@ namespace ShatteredForge.SceneFlow
                 _profile = null;
                 _profileId = string.Empty;
                 _account = BuildInitialAccount();
+                CharacterPaperDoll.EnsureList(_account);
+                CharacterStatsService.RecalculateForCamp(_account);
                 _status = "Лагерь (демо, без профиля)";
             }
             else
             {
                 _account = LoadOrCreateAccount(_profile);
+                CharacterPaperDoll.EnsureList(_account);
+                CharacterStatsService.RecalculateForCamp(_account);
                 SyncLegacyResourcesFromProfile(_profile, _account);
+                ProfileAccountGoldMigration.ApplyMissingGoldFieldOnce(_profile, _account, PersistAccountIfNeeded);
                 _status = string.IsNullOrEmpty(_profile.profileName)
                     ? "Лагерь"
                     : $"Лагерь | {_profile.profileName}";
@@ -83,11 +106,56 @@ namespace ShatteredForge.SceneFlow
             // Stale "resume expedition" from a prior session/editor run must not hijack GameplayScene Awake
             // (otherwise PlayableLoopDemo restores an old run instead of honouring dungeon entry from camp).
             MenuSessionWriter.ClearResumeIntent();
+
+            _inventoryPanel = GetComponent<PlayerInventoryPanel>();
+            if (_inventoryPanel == null)
+            {
+                _inventoryPanel = gameObject.AddComponent<PlayerInventoryPanel>();
+            }
+
+            _inventoryPanel.BindCamp(
+                _account,
+                PersistAccountIfNeeded,
+                _ => RefreshCampLookCapture());
+
+            _characterSheet = GetComponent<CampCharacterSheetPanel>();
+            if (_characterSheet == null)
+            {
+                _characterSheet = gameObject.AddComponent<CampCharacterSheetPanel>();
+            }
+
+            _characterSheet.Bind(_account, PersistAccountIfNeeded, RefreshCampLookCapture);
+        }
+
+        private void RefreshCampLookCapture()
+        {
+            var rig = FindFirstObjectByType<CampHubCameraRig>();
+            if (rig == null)
+            {
+                return;
+            }
+
+            var suppressed = (_characterSheet != null && _characterSheet.IsOpen) ||
+                             (_inventoryPanel != null && _inventoryPanel.IsOpen) ||
+                             _stubPanelOpen;
+            rig.SetLookFromUiSuppressed(suppressed);
         }
 
         private void Update()
         {
             UpdateNearKind();
+            if (_characterSheet != null && _characterSheet.IsOpen && DemoInput.KeyDown(Key.Escape))
+            {
+                _characterSheet.SetOpen(false);
+                return;
+            }
+
+            if (_inventoryPanel != null && _inventoryPanel.IsOpen && DemoInput.KeyDown(Key.Escape))
+            {
+                _inventoryPanel.SetOpen(false);
+                return;
+            }
+
             if (DemoInput.KeyDown(Key.Escape))
             {
                 if (_stubPanelOpen)
@@ -104,12 +172,18 @@ namespace ShatteredForge.SceneFlow
             {
                 TryInteract();
             }
+
+            if (DemoInput.KeyDown(Key.C))
+            {
+                _characterSheet?.Toggle();
+            }
         }
 
         private void OnGUI()
         {
             const int pad = 12;
             GUI.Label(new Rect(pad, pad, Screen.width - pad * 2, 24), _status);
+
             var hintY = pad + 28;
             if (_near != NearKind.None)
             {
@@ -126,7 +200,7 @@ namespace ShatteredForge.SceneFlow
             }
             else
             {
-                GUI.Label(new Rect(pad, hintY, Screen.width - pad * 2, 24), "WASD / стрелки — движение | Мышь — обзор (герой поворачивается) | Esc — курсор | Подойти к меткам | E — действие");
+                GUI.Label(new Rect(pad, hintY, Screen.width - pad * 2, 24), "WASD / стрелки — движение | Мышь — обзор (герой поворачивается) | C — слоты и снабжение | Tab — снабжение | Esc — курсор | Подойти к меткам | E — действие");
                 hintY += 26;
             }
 
@@ -224,8 +298,18 @@ namespace ShatteredForge.SceneFlow
 
         private void SetStubPanelOpen(bool open)
         {
+            if (open && _inventoryPanel != null && _inventoryPanel.IsOpen)
+            {
+                _inventoryPanel.SetOpen(false);
+            }
+
+            if (open && _characterSheet != null && _characterSheet.IsOpen)
+            {
+                _characterSheet.SetOpen(false);
+            }
+
             _stubPanelOpen = open;
-            FindFirstObjectByType<CampHubCameraRig>()?.SetLookFromUiSuppressed(open);
+            RefreshCampLookCapture();
         }
 
         private void UpdateNearKind()
@@ -268,6 +352,18 @@ namespace ShatteredForge.SceneFlow
 
         private void TryInteract()
         {
+            if (_characterSheet != null && _characterSheet.IsOpen)
+            {
+                _characterSheet.SetOpen(false);
+                return;
+            }
+
+            if (_inventoryPanel != null && _inventoryPanel.IsOpen)
+            {
+                _inventoryPanel.SetOpen(false);
+                return;
+            }
+
             if (_stubPanelOpen)
             {
                 SetStubPanelOpen(false);
@@ -318,6 +414,7 @@ namespace ShatteredForge.SceneFlow
             _profile.emberCore = _account.emberCore;
             _profile.sigilToken = _account.sigilToken;
             _profile.insuranceSeal = _account.insuranceSeal;
+            _profile.gold = _account.gold;
             _profile.accountJson = JsonUtility.ToJson(_account);
             _profilesService.SaveProfile(_profile);
         }
@@ -326,25 +423,27 @@ namespace ShatteredForge.SceneFlow
         {
             var account = new AccountState
             {
+                gold = AccountEconomy.StarterGoldPurse,
                 forgeDust = 2500,
                 emberCore = 5,
                 sigilToken = 20,
-                insuranceSeal = 1
+                insuranceSeal = 1,
+                primaryStats = CharacterPrimaryStats.CreateDefault()
             };
 
             account.stash.Add(new ItemInstance
             {
                 id = Guid.NewGuid().ToString(),
-                templateId = "weapon_sword_t1",
-                rarity = "Rare",
-                enhanceLevel = 5
+                templateId = "weapon_simple_sword",
+                rarity = "Обычная",
+                enhanceLevel = 0
             });
             account.stash.Add(new ItemInstance
             {
                 id = Guid.NewGuid().ToString(),
-                templateId = "armor_chest_t1",
-                rarity = "Magic",
-                enhanceLevel = 3
+                templateId = "armor_simple_chest",
+                rarity = "Обычная",
+                enhanceLevel = 0
             });
 
             return account;
@@ -356,7 +455,10 @@ namespace ShatteredForge.SceneFlow
             {
                 try
                 {
-                    return JsonUtility.FromJson<AccountState>(profile.accountJson) ?? BuildInitialAccount();
+                    var acc = JsonUtility.FromJson<AccountState>(profile.accountJson) ?? BuildInitialAccount();
+                    CharacterPaperDoll.EnsureList(acc);
+                    CharacterStatsService.RecalculateForCamp(acc);
+                    return acc;
                 }
                 catch
                 {
@@ -380,6 +482,7 @@ namespace ShatteredForge.SceneFlow
                 account.emberCore = profile.emberCore;
                 account.sigilToken = profile.sigilToken;
                 account.insuranceSeal = profile.insuranceSeal;
+                account.gold = profile.gold;
             }
         }
     }

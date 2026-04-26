@@ -19,6 +19,7 @@ namespace ShatteredForge.Prototype
         {
             _account = new AccountState
             {
+                gold = AccountEconomy.StarterGoldPurse,
                 forgeDust = 2500,
                 emberCore = 5,
                 sigilToken = 20,
@@ -35,9 +36,9 @@ namespace ShatteredForge.Prototype
             var weapon = new ItemInstance
             {
                 id = Guid.NewGuid().ToString(),
-                templateId = "weapon_sword_t1",
-                rarity = "Rare",
-                enhanceLevel = 5,
+                templateId = "weapon_simple_sword",
+                rarity = "Обычная",
+                enhanceLevel = 0,
                 isInsuredForRun = true
             };
 

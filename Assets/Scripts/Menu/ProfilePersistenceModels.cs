@@ -25,6 +25,13 @@ namespace ShatteredForge.Menu
     {
         public string profileId;
         public string profileName;
+
+        /// <summary>Mirror of account gold when <c>accountJson</c> is empty; overwritten on save from account.</summary>
+        public int gold = 20;
+
+        /// <summary>One-time migration for saves created before <c>AccountState.gold</c> existed (JSON omitted field → 0).</summary>
+        public bool accountGoldMigrated;
+
         public int forgeDust = 2500;
         public int emberCore = 5;
         public int sigilToken = 20;

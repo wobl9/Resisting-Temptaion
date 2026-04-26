@@ -1,3 +1,4 @@
+using ShatteredForge.Core;
 using UnityEngine;
 
 namespace ShatteredForge.Combat
@@ -8,16 +9,27 @@ namespace ShatteredForge.Combat
         [SerializeField] private float maxHealth = 3f;
         [SerializeField] private float contactDamage = 0.06f;
         [SerializeField] private float contactCooldown = 0.9f;
+        [SerializeField] private CharacterPrimaryStats primaryStats = new()
+        {
+            strength = 8,
+            agility = 8,
+            vitality = 8,
+            intellect = 6
+        };
+        [SerializeField] private FlatStatBonuses statBonuses = new();
 
         private Transform _target;
         private float _health;
         private float _nextDamageTime;
+        private ComputedCharacterStats _computedStats;
 
         public bool IsDead { get; private set; }
+        public float CurrentHealth => _health;
+        public float MaxHealth => maxHealth;
 
         private void Awake()
         {
-            _health = maxHealth;
+            RebuildStats();
         }
 
         public void SetTarget(Transform target)
@@ -29,7 +41,41 @@ namespace ShatteredForge.Combat
         {
             maxHealth = health;
             moveSpeed = speed;
-            _health = maxHealth;
+            RebuildStats();
+        }
+
+        public void Configure(float health, float speed, CharacterPrimaryStats stats, FlatStatBonuses bonuses)
+        {
+            maxHealth = health;
+            moveSpeed = speed;
+            primaryStats = stats ?? CharacterPrimaryStats.CreateDefault();
+            statBonuses = bonuses ?? new FlatStatBonuses();
+            RebuildStats();
+        }
+
+        public void Configure(
+            float health,
+            float speed,
+            float baseContactDamage,
+            float baseContactCooldown,
+            CharacterPrimaryStats stats,
+            FlatStatBonuses bonuses)
+        {
+            maxHealth = health;
+            moveSpeed = speed;
+            contactDamage = Mathf.Max(0f, baseContactDamage);
+            contactCooldown = Mathf.Max(0.05f, baseContactCooldown);
+            primaryStats = stats ?? CharacterPrimaryStats.CreateDefault();
+            statBonuses = bonuses ?? new FlatStatBonuses();
+            RebuildStats();
+        }
+
+        public ComputedCharacterStats CurrentStats => _computedStats;
+
+        private void RebuildStats()
+        {
+            _computedStats = CharacterStatsService.BuildComputed(primaryStats, statBonuses);
+            _health = maxHealth + (_computedStats.armor * 0.35f);
         }
 
         public void TakeDamage(float amount)
@@ -39,7 +85,9 @@ namespace ShatteredForge.Combat
                 return;
             }
 
-            _health -= amount;
+            var armorMitigation = _computedStats != null ? _computedStats.armor * 0.05f : 0f;
+            var mitigatedDamage = Mathf.Max(0.1f, amount - armorMitigation);
+            _health -= mitigatedDamage;
             if (_health <= 0f)
             {
                 IsDead = true;
@@ -75,7 +123,8 @@ namespace ShatteredForge.Combat
             }
 
             _nextDamageTime = Time.time + contactCooldown;
-            player.ApplyDamage(contactDamage);
+            var statDrivenDamage = _computedStats != null ? _computedStats.damage * 0.002f : 0f;
+            player.ApplyDamage(contactDamage + statDrivenDamage);
         }
     }
 }

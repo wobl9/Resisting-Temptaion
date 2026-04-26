@@ -394,6 +394,8 @@ GameObject:
   - component: {fileID: 920080002}
   - component: {fileID: 920080003}
   - component: {fileID: 920080004}
+  - component: {fileID: 920080005}
+  - component: {fileID: 920080006}
   m_Layer: 0
   m_Name: CampHubSystems
   m_TagString: Untagged
@@ -423,6 +425,32 @@ MonoBehaviour:
   alchemyAnchor: {fileID: 920080051}
   dungeonAnchor: {fileID: 920080061}
   interactRadius: 2.2
+  itemCatalog: {fileID: 11400000, guid: f0e1d2c3b4a59687786955443322110f, type: 2}
+--- !u!114 &920080005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920080001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4a3f2e1d09876543210fedcba987601, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.UI.PlayerInventoryPanel
+  toggleKey: 3
+--- !u!114 &920080006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920080001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f405162738495a6b7c8d9e0f1a2b3c4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.UI.CampCharacterSheetPanel
 --- !u!114 &920080004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1074,7 +1102,6 @@ SceneRoots:
   - {fileID: 920080002}
   - {fileID: 330585546}
   - {fileID: 410087041}
-  - {fileID: 832575519}
   - {fileID: 920080011}
   - {fileID: 920080021}
   - {fileID: 920080031}

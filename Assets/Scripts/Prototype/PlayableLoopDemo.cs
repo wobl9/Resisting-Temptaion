@@ -5,8 +5,10 @@ using ShatteredForge.Core;
 using ShatteredForge.Input;
 using ShatteredForge.Menu;
 using ShatteredForge.Progression;
+using ShatteredForge.Items;
 using ShatteredForge.Run;
 using ShatteredForge.SceneFlow;
+using ShatteredForge.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -31,6 +33,10 @@ namespace ShatteredForge.Prototype
         [Header("Combat (same GameObject as GameBootstrap)")]
         [SerializeField] private CombatRoomBootstrap combatBootstrap;
 
+        [Header("Items")]
+        [Tooltip("If null, loads Resources/Items/DefaultItemCatalog.")]
+        [SerializeField] private ItemCatalog itemCatalog;
+
         [Header("Profile storage")]
         [SerializeField] private ProfileStorageMode profileStorageMode = ProfileStorageMode.Local;
         [SerializeField] private string remoteProfileStorageBaseUrl = "";
@@ -47,12 +53,24 @@ namespace ShatteredForge.Prototype
 
         private List<RoomType> _rooms;
         private string _lastOutcome = "No runs yet.";
+        private PlayerInventoryPanel _inventoryPanel;
 
         public bool IsInRun => _state == DemoState.InRun && _runController.CurrentRun != null;
         public RunState CurrentRun => _runController?.CurrentRun;
+        public ComputedCharacterStats CurrentComputedStats => _account?.computedStats;
 
         private void Awake()
         {
+            ItemCatalogRuntime.Current = itemCatalog != null
+                ? itemCatalog
+                : Resources.Load<ItemCatalog>("Items/DefaultItemCatalog");
+            ItemStatBonusCatalogRuntime.Current = Resources.Load<ItemStatBonusCatalog>("Items/DefaultItemStatBonusCatalog");
+            if (ItemCatalogRuntime.Current == null)
+            {
+                Debug.LogWarning(
+                    $"{nameof(PlayableLoopDemo)}: ItemCatalog not assigned and Resources.Load(\"Items/DefaultItemCatalog\") failed.");
+            }
+
             _profilesService = ProfileStorageFactory.Create(
                 profileStorageMode,
                 remoteProfileStorageBaseUrl,
@@ -74,6 +92,8 @@ namespace ShatteredForge.Prototype
                 _profile = null;
                 _profileId = string.Empty;
                 _account = BuildInitialAccount();
+                CharacterPaperDoll.EnsureList(_account);
+                CharacterStatsService.RecalculateForCamp(_account);
                 _lastOutcome = "No profile loaded (demo fallback).";
                 PendingCampDungeonRequest.Consume();
                 MenuSessionWriter.ConsumePendingDungeonEntry();
@@ -82,7 +102,10 @@ namespace ShatteredForge.Prototype
             }
 
             _account = LoadOrCreateAccount(_profile);
+            CharacterPaperDoll.EnsureList(_account);
+            CharacterStatsService.RecalculateForCamp(_account);
             SyncLegacyResourcesFromProfile(_profile, _account);
+            ProfileAccountGoldMigration.ApplyMissingGoldFieldOnce(_profile, _account, PersistAccount);
 
             var savedMinRooms = _profile.expeditionMinRoomsPerAct;
             var savedMaxRooms = _profile.expeditionMaxRoomsPerAct;
@@ -131,10 +154,34 @@ namespace ShatteredForge.Prototype
 
         private void Start()
         {
+            EnsureInventoryPanel();
             if (IsInRun)
             {
                 combatBootstrap?.OnRunStartedOrRoomAdvanced();
             }
+        }
+
+        private void EnsureInventoryPanel()
+        {
+            if (_inventoryPanel != null)
+            {
+                return;
+            }
+
+            _inventoryPanel = GetComponent<PlayerInventoryPanel>();
+            if (_inventoryPanel == null)
+            {
+                _inventoryPanel = gameObject.AddComponent<PlayerInventoryPanel>();
+            }
+
+            _inventoryPanel.BindGameplay(
+                _account,
+                () => _runController?.CurrentRun,
+                () =>
+                {
+                    PersistAccount();
+                    PersistExpedition();
+                });
         }
 
         private void Update()
@@ -170,7 +217,7 @@ namespace ShatteredForge.Prototype
 
         private void TryStartRun()
         {
-            if (_state == DemoState.InRun || _account.stash.Count == 0)
+            if (_state == DemoState.InRun || !InventoryEquipmentRules.AccountCanStartRun(_account))
             {
                 return;
             }
@@ -180,15 +227,15 @@ namespace ShatteredForge.Prototype
                 hpState = Mathf.Clamp01(startingHpPercent / 100f)
             };
 
-            var equippedWeapon = _account.stash[0];
-            _account.stash.RemoveAt(0);
-            equippedWeapon.isInsuredForRun = autoInsureFirstItem && _account.insuranceSeal > 0;
-            if (equippedWeapon.isInsuredForRun)
+            if (!InventoryEquipmentRules.PopulateStartingLoadout(
+                    runState,
+                    _account,
+                    autoInsureFirstItem,
+                    ref _account.insuranceSeal))
             {
-                _account.insuranceSeal--;
+                return;
             }
 
-            runState.equippedLoadout.Add(equippedWeapon);
             _runController.StartRun(UnityEngine.Random.Range(1, int.MaxValue), runState);
 
             _runGenerator = new RunGenerator(_runController.CurrentRun.seed);
@@ -323,8 +370,8 @@ namespace ShatteredForge.Prototype
             GUI.Label(new Rect(x, y, 1200, line), $"Last outcome: {_lastOutcome}");
             y += line + 8;
             var controls = combatBootstrap != null
-                ? "WASD move | Auto-fire at nearest enemy | R Start (hub) | E Extract | K Die | H hub after run"
-                : "Controls: R - Start Run, C - Clear Room, E - Extract, K - Die | H hub after run";
+                ? "WASD move | Auto-fire at nearest enemy | Tab инвентарь | R Start (hub) | E Extract | K Die | H hub after run"
+                : "Controls: Tab инвентарь | R - Start Run, C - Clear Room, E - Extract, K - Die | H hub after run";
             GUI.Label(new Rect(x, y, 1200, line), controls);
         }
 
@@ -336,7 +383,7 @@ namespace ShatteredForge.Prototype
             }
 
             EnsureMinimalRunGear(_account);
-            if (_account.stash.Count == 0)
+            if (!InventoryEquipmentRules.AccountCanStartRun(_account))
             {
                 return;
             }
@@ -346,15 +393,15 @@ namespace ShatteredForge.Prototype
                 hpState = Mathf.Clamp01(startingHpPercent / 100f)
             };
 
-            var equippedWeapon = _account.stash[0];
-            _account.stash.RemoveAt(0);
-            equippedWeapon.isInsuredForRun = autoInsureFirstItem && _account.insuranceSeal > 0;
-            if (equippedWeapon.isInsuredForRun)
+            if (!InventoryEquipmentRules.PopulateStartingLoadout(
+                    runState,
+                    _account,
+                    autoInsureFirstItem,
+                    ref _account.insuranceSeal))
             {
-                _account.insuranceSeal--;
+                return;
             }
 
-            runState.equippedLoadout.Add(equippedWeapon);
             _runController.StartRun(UnityEngine.Random.Range(1, int.MaxValue), runState);
 
             _runGenerator = new RunGenerator(_runController.CurrentRun.seed);
@@ -365,7 +412,8 @@ namespace ShatteredForge.Prototype
 
         private static void EnsureMinimalRunGear(AccountState account)
         {
-            if (account == null || account.stash.Count > 0)
+            CharacterPaperDoll.EnsureList(account);
+            if (account == null || account.stash.Count > 0 || CharacterPaperDoll.HasAnyEquippedItem(account))
             {
                 return;
             }
@@ -387,25 +435,27 @@ namespace ShatteredForge.Prototype
         {
             var account = new AccountState
             {
+                gold = AccountEconomy.StarterGoldPurse,
                 forgeDust = 2500,
                 emberCore = 5,
                 sigilToken = 20,
-                insuranceSeal = 1
+                insuranceSeal = 1,
+                primaryStats = CharacterPrimaryStats.CreateDefault()
             };
 
             account.stash.Add(new ItemInstance
             {
                 id = Guid.NewGuid().ToString(),
-                templateId = "weapon_sword_t1",
-                rarity = "Rare",
-                enhanceLevel = 5
+                templateId = "weapon_simple_sword",
+                rarity = "Обычная",
+                enhanceLevel = 0
             });
             account.stash.Add(new ItemInstance
             {
                 id = Guid.NewGuid().ToString(),
-                templateId = "armor_chest_t1",
-                rarity = "Magic",
-                enhanceLevel = 3
+                templateId = "armor_simple_chest",
+                rarity = "Обычная",
+                enhanceLevel = 0
             });
 
             return account;
@@ -428,7 +478,10 @@ namespace ShatteredForge.Prototype
             {
                 try
                 {
-                    return JsonUtility.FromJson<AccountState>(profile.accountJson) ?? BuildInitialAccount();
+                    var acc = JsonUtility.FromJson<AccountState>(profile.accountJson) ?? BuildInitialAccount();
+                    CharacterPaperDoll.EnsureList(acc);
+                    CharacterStatsService.RecalculateForCamp(acc);
+                    return acc;
                 }
                 catch
                 {
@@ -452,6 +505,7 @@ namespace ShatteredForge.Prototype
                 account.emberCore = profile.emberCore;
                 account.sigilToken = profile.sigilToken;
                 account.insuranceSeal = profile.insuranceSeal;
+                account.gold = profile.gold;
             }
         }
 
@@ -466,6 +520,7 @@ namespace ShatteredForge.Prototype
             _profile.emberCore = _account.emberCore;
             _profile.sigilToken = _account.sigilToken;
             _profile.insuranceSeal = _account.insuranceSeal;
+            _profile.gold = _account.gold;
             _profile.accountJson = JsonUtility.ToJson(_account);
             _profilesService.SaveProfile(_profile);
         }
@@ -565,17 +620,13 @@ namespace ShatteredForge.Prototype
                     hpState = Mathf.Clamp01(profile.expeditionHpState)
                 };
 
-                if (_account.stash.Count > 0 && profile.expeditionRoomIndex <= 0)
+                if (InventoryEquipmentRules.AccountCanStartRun(_account) && profile.expeditionRoomIndex <= 0)
                 {
-                    var equippedWeapon = _account.stash[0];
-                    _account.stash.RemoveAt(0);
-                    equippedWeapon.isInsuredForRun = autoInsureFirstItem && _account.insuranceSeal > 0;
-                    if (equippedWeapon.isInsuredForRun)
-                    {
-                        _account.insuranceSeal--;
-                    }
-
-                    runState.equippedLoadout.Add(equippedWeapon);
+                    InventoryEquipmentRules.PopulateStartingLoadout(
+                        runState,
+                        _account,
+                        autoInsureFirstItem,
+                        ref _account.insuranceSeal);
                 }
 
                 _runController.StartRun(profile.expeditionRunSeed, runState);
@@ -590,6 +641,8 @@ namespace ShatteredForge.Prototype
             {
                 _state = DemoState.InRun;
             }
+
+            CharacterStatsService.RecalculateForRun(_account, _runController.CurrentRun);
         }
     }
 }

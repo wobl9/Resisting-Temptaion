@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7f8a9b0c1d2e3f405162738495a6b7c, type: 3}
+  m_Name: DefaultItemCatalog
+  m_EditorClassIdentifier: 
+  entries:
+  - templateId: weapon_simple_sword
+    displayNameRu: "\u041f\u0440\u043e\u0441\u0442\u043e\u0439 \u043c\u0435\u0447"
+    equipKind: 1
+    preferredBodySlot: 5
+    buyGoldPrice: 5
+  - templateId: armor_simple_chest
+    displayNameRu: "\u041f\u0440\u043e\u0441\u0442\u0430\u044f \u0431\u0440\u043e\u043d\u044f"
+    equipKind: 2
+    preferredBodySlot: 2
+    buyGoldPrice: 6
+  - templateId: weapon_sword_t1
+    displayNameRu: "\u041c\u0435\u0447 (T1)"
+    equipKind: 1
+    preferredBodySlot: 5
+    buyGoldPrice: 7
+  - templateId: armor_chest_t1
+    displayNameRu: "\u0411\u0440\u043e\u043d\u044f (T1)"
+    equipKind: 2
+    preferredBodySlot: 2
+    buyGoldPrice: 7

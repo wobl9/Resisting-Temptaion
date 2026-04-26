@@ -416,18 +416,43 @@ namespace ShatteredForge.Menu
             GUILayout.Space(10f);
             if (LocalizationSettings.HasSettings && LocalizationBootstrap.AreTablesReady)
             {
-                var langCode = LocalizationSettings.SelectedLocale != null
-                    ? LocalizationSettings.SelectedLocale.Identifier.Code
-                    : LocalizationPreferences.GetSelectedLocaleCodeOrEmpty();
-                if (string.IsNullOrEmpty(langCode))
+                var locales = LocalizationSettings.AvailableLocales.Locales;
+                if (locales != null && locales.Count > 0)
                 {
-                    langCode = LocalePreferencePreview.PreferCyrillicUi() ? "ru" : "en";
-                }
+                    var langCode = LocalizationSettings.SelectedLocale != null
+                        ? LocalizationSettings.SelectedLocale.Identifier.Code
+                        : LocalizationPreferences.GetSelectedLocaleCodeOrEmpty();
+                    if (string.IsNullOrEmpty(langCode))
+                    {
+                        langCode = LocalePreferencePreview.PreferCyrillicUi() ? "ru" : "en";
+                    }
 
-                GUILayout.Label(Loc.UiFormat(UiKeys.LanguageLabel, langCode));
-                if (GUILayout.Button(Loc.Ui(UiKeys.NextLanguage), ButtonOptions()))
-                {
-                    CycleSelectedLocale();
+                    GUILayout.Label(Loc.UiFormat(UiKeys.LanguageLabel, langCode));
+
+                    var codes = new string[locales.Count];
+                    var selectedIndex = 0;
+                    for (var i = 0; i < locales.Count; i++)
+                    {
+                        var loc = locales[i];
+                        var code = loc != null ? loc.Identifier.Code : "?";
+                        codes[i] = code;
+                        if (code == langCode)
+                        {
+                            selectedIndex = i;
+                        }
+                    }
+
+                    var cols = locales.Count <= 4 ? locales.Count : 4;
+                    var newIndex = GUILayout.SelectionGrid(selectedIndex, codes, cols, GUILayout.Height(32f));
+                    if (newIndex != selectedIndex && newIndex >= 0 && newIndex < locales.Count)
+                    {
+                        var picked = locales[newIndex];
+                        if (picked != null)
+                        {
+                            LocalizationSettings.SelectedLocale = picked;
+                            LocalizationPreferences.SetSelectedLocaleCode(picked.Identifier.Code);
+                        }
+                    }
                 }
             }
 
@@ -486,38 +511,6 @@ namespace ShatteredForge.Menu
             }
 
             return Loc.Ui(UiKeys.CommonUnknown);
-        }
-
-        private static void CycleSelectedLocale()
-        {
-            if (!LocalizationBootstrap.AreTablesReady || !LocalizationSettings.HasSettings)
-            {
-                return;
-            }
-
-            var locales = LocalizationSettings.AvailableLocales.Locales;
-            if (locales == null || locales.Count == 0)
-            {
-                return;
-            }
-
-            var currentCode = LocalizationSettings.SelectedLocale != null
-                ? LocalizationSettings.SelectedLocale.Identifier.Code
-                : string.Empty;
-
-            var index = 0;
-            for (var i = 0; i < locales.Count; i++)
-            {
-                if (locales[i] != null && locales[i].Identifier.Code == currentCode)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            var next = locales[(index + 1) % locales.Count];
-            LocalizationSettings.SelectedLocale = next;
-            LocalizationPreferences.SetSelectedLocaleCode(next.Identifier.Code);
         }
 
         private void TryEnterGameplay(string profileId, bool resumeExpedition)
