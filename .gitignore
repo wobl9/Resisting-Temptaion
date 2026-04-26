@@ -93,7 +93,10 @@ Assets/Plugins/Editor/JetBrains*
 # ==========================================
 # Cursor / AI tooling local files
 # ==========================================
-.cursor/
+# Ignore Cursor metadata under .cursor/, but version shared agent rules.
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 .cursor-cache/
 
 # ==========================================

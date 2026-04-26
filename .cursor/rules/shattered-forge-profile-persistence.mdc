@@ -1,0 +1,19 @@
+---
+description: Shattered Forge — профили и сохранения (IProfileStorage, диск, PlayerPrefs, remote позже)
+alwaysApply: true
+---
+
+# Персистентность профилей (save system)
+
+Полная карта: **`Docs/ShatteredForge/Profile_persistence.md`** — перед изменением сохранений/профилей перечитай этот файл и держись описанного контракта.
+
+## Кратко (не дублируй логику в правиле — детали в доке)
+
+- **Контракт:** `IProfileStorage` (`Assets/Scripts/Menu/IProfileStorage.cs`). Меню и геймплей зависят от интерфейса, не от конкретного хранилища.
+- **Реализации:** `LocalJsonProfileStorage` (JSON на диске), `RemoteProfileStorage` (HTTP + зеркало на диск; **сервер подключаем позже**).
+- **Фабрика:** `ProfileStorageFactory.Create` — по умолчанию в сценах **`ProfileStorageMode.Local`** и пустой remote URL; пустой URL при Remote = откат на local.
+- **Диск:** `Application.persistentDataPath/ShatteredForge/` — `profiles_index.json` + `Profiles/profile_{id}.json`. Модели: `ProfilePersistenceModels.cs`.
+- **Между сценами:** `PlayerPrefs` — ключи в `MenuSessionPrefs` / запись через `MenuSessionWriter` (активный профиль, флаг resume экспедиции).
+- **Ревизии:** `ProfileData.profileRevision` — для optimistic concurrency с будущим сервером.
+
+Не меняй дефолт на Remote без явного запроса и готового API. Новые точки сохранения — через существующий `IProfileStorage`, не прямой `File`/`PlayerPrefs` для данных профиля.
