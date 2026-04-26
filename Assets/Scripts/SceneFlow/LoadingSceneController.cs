@@ -99,7 +99,7 @@ namespace ShatteredForge.SceneFlow
                 0f,
                 0f);
 
-            var title = Loc.Ui(UiKeys.LoadingGameplay);
+            var title = LoadingCopy.LoadingTitle;
             var style = HeaderStyle();
             style.alignment = TextAnchor.MiddleCenter;
             var titleH = style.CalcHeight(new GUIContent(title), Screen.width);
@@ -142,11 +142,11 @@ namespace ShatteredForge.SceneFlow
             var y = Screen.height * 0.35f;
             GUILayout.BeginArea(new Rect(x, y, width, 220f));
             var style = HeaderStyle();
-            GUILayout.Label(Loc.Ui(UiKeys.LoadingErrorTitle), style);
+            GUILayout.Label(LoadingCopy.ErrorTitle, style);
             GUILayout.Space(12f);
             GUILayout.TextArea(_errorMessage, GUILayout.Height(80f));
             GUILayout.Space(12f);
-            if (GUILayout.Button(Loc.Ui(UiKeys.LoadingBackToMenu), GUILayout.Height(32f)))
+            if (GUILayout.Button(LoadingCopy.BackToMenu, GUILayout.Height(32f)))
             {
                 SceneManager.LoadScene(SceneNames.DefaultMenu, LoadSceneMode.Single);
             }
@@ -232,6 +232,20 @@ namespace ShatteredForge.SceneFlow
             }
 
             return false;
+        }
+
+        private static class LoadingCopy
+        {
+            public static string LoadingTitle =>
+                PreferCyrillicUi() ? "Загрузка..." : "Loading...";
+
+            public static string ErrorTitle =>
+                PreferCyrillicUi() ? "Ошибка загрузки сцены" : "Scene load error";
+
+            public static string BackToMenu =>
+                PreferCyrillicUi() ? "В меню" : "Back to menu";
+
+            private static bool PreferCyrillicUi() => LocalePreferencePreview.PreferCyrillicUi();
         }
     }
 }

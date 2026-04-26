@@ -14,6 +14,7 @@ Legend: `Done` | `In Progress` | `Planned` | `Blocked`
 - Run loss rules with insurance exception: `Done`
 - Main menu controller integration: `In Progress`
 - Profile persistence (`IProfileStorage`, local JSON + optional remote stub): `In Progress` (see `Docs/ShatteredForge/Profile_persistence.md`)
+- Scene transitions via loading scene (`SceneNavigation`, Boot vs Loading): `Done` (see `Docs/ShatteredForge/Scene_loading_transitions.md`)
 - Economy balance pass: `Planned`
 - Sharpening full implementation (+0..+15 rules): `Planned`
 - Socketing and skill tuning production pass: `Planned`
@@ -26,6 +27,7 @@ Legend: `Done` | `In Progress` | `Planned` | `Blocked`
 - Confirmed playable loop status split: demo loop is `Done`, GDD-aligned loop remains `In Progress`.
 - Implemented profile deletion flow (with confirmation) in menu and storage service; pending manual play-mode verification.
 - Updated main menu + profile persistence to match `Menu_logic_contract.md` (RU UI, hidden Continue, expedition save/resume handoff).
+- Documented loading-scene flow and `SceneNavigation` usage in `Docs/ShatteredForge/Scene_loading_transitions.md` (linked from this file).
 
 ## Next 3 Priorities
 1. Build a fully working start menu flow.
@@ -43,6 +45,7 @@ Legend: `Done` | `In Progress` | `Planned` | `Blocked`
 
 ## Verification Notes
 - Playable demo setup reference: `Docs/ShatteredForge/Playable_demo_setup.md`
+- Scene / loading screen transitions (API, build list, exceptions): `Docs/ShatteredForge/Scene_loading_transitions.md`
 - Test result summary (manual): `TBD`
 
 ## Update Rule

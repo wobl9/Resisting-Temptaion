@@ -1,0 +1,31 @@
+---
+description: Shattered Forge — всегда переход между сценами через Loading и SceneNavigation
+globs:
+  - Assets/Scripts/**/*.cs
+alwaysApply: false
+---
+
+# Shattered Forge — переходы между сценами (экран загрузки)
+
+## Обязательный паттерн
+
+- Для **любого** перехода между сценами билда (меню ↔ геймплей, хабы, будущие экраны) используй **`ShatteredForge.SceneFlow.SceneNavigation.GoTo(string targetSceneName)`** — не вызывай напрямую `SceneManager.LoadScene`, `LoadSceneAsync` или `LoadSceneMode` для таких переходов.
+- Реализация: [`SceneNavigation`](Assets/Scripts/SceneFlow/SceneNavigation.cs) кладёт цель в [`PendingSceneLoad`](Assets/Scripts/SceneFlow/PendingSceneLoad.cs) и грузит сцену **[`SceneNames.Loading`](Assets/Scripts/SceneFlow/SceneNames.cs)** (`"Loading"`); [`LoadingSceneController`](Assets/Scripts/SceneFlow/LoadingSceneController.cs) асинхронно активирует целевую сцену с прогрессом.
+
+## Исключения (можно без SceneNavigation)
+
+- Сцена **`Boot`** ([`BootSceneController`](Assets/Scripts/SceneFlow/BootSceneController.cs)) — холодный старт до меню.
+- Внутри **`LoadingSceneController`** — загрузка целевой сцены после чтения `PendingSceneLoad`.
+- Внутри **`SceneNavigation`** — переход на сцену `Loading`.
+- **Editor-only** скрипты (`Assets/Scripts/Editor/**`), тестовые раннеры, явный `EditorSceneManager` в инструментарии.
+- Аварийный **fallback** (например «вернуться в меню» из Loading при ошибке), если он уже внутри слоя загрузки и задокументирован.
+
+## При добавлении новой сцены
+
+- Имя целевой сцены — **как в Build Settings** (без `.unity`). По возможности добавь константу в [`SceneNames`](Assets/Scripts/SceneFlow/SceneNames.cs), чтобы не плодить строковые литералы.
+- Новая сцена должна быть **включена в** `ProjectSettings/EditorBuildSettings.asset` (или через Unity **File → Build Settings**).
+
+## Чего не делать
+
+- Не вводить «быстрый» `LoadScene` в геймплее/меню «только здесь» — это ломает единый UX загрузки и снова даёт пики памяти/фризы.
+- Не менять дефолтный сценарий на обход Loading без явного согласования в задаче.

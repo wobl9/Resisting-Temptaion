@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using ShatteredForge.Localization;
 using ShatteredForge.SceneFlow;
@@ -47,22 +48,18 @@ namespace ShatteredForge.Menu
         private Resolution[] _resolutions;
         private int _resolutionIndex;
 
+        private bool _profilesReady;
+
         private void Awake()
         {
-            _profilesService = ProfileStorageFactory.Create(
-                profileStorageMode,
-                remoteProfileStorageBaseUrl,
-                remoteProfileStorageAuthBearer);
-            ReloadProfiles();
-
             if (string.IsNullOrEmpty(_newProfileName))
             {
-                _newProfileName = Loc.Ui(UiKeys.DefaultNewProfileName);
+                _newProfileName = MenuWarmStrings.DefaultNewProfileName;
             }
 
             if (string.IsNullOrEmpty(_status))
             {
-                _status = Loc.Ui(UiKeys.Welcome);
+                _status = MenuWarmStrings.Welcome;
             }
 
             _masterVolume = AudioListener.volume;
@@ -71,11 +68,42 @@ namespace ShatteredForge.Menu
             _resolutionIndex = FindCurrentResolutionIndex();
         }
 
+        private void Start()
+        {
+            StartCoroutine(LoadProfilesAfterFirstFrame());
+        }
+
+        private IEnumerator LoadProfilesAfterFirstFrame()
+        {
+            yield return null;
+            _profilesService = ProfileStorageFactory.Create(
+                profileStorageMode,
+                remoteProfileStorageBaseUrl,
+                remoteProfileStorageAuthBearer);
+            ReloadProfiles();
+            _profilesReady = true;
+        }
+
         private void OnGUI()
         {
             if (Event.current.type == EventType.Repaint)
             {
                 DrawMenuBackdrop();
+            }
+
+            if (!_profilesReady)
+            {
+                if (Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout)
+                {
+                    Event.current.Use();
+                }
+
+                if (Event.current.type == EventType.Repaint)
+                {
+                    DrawMenuLoadingShell();
+                }
+
+                return;
             }
 
             DrawActiveProfileEntry();
@@ -381,9 +409,17 @@ namespace ShatteredForge.Menu
             }
 
             GUILayout.Space(10f);
-            if (LocalizationSettings.HasSettings && LocalizationSettings.SelectedLocale != null)
+            if (LocalizationSettings.HasSettings && LocalizationBootstrap.AreTablesReady)
             {
-                GUILayout.Label(Loc.UiFormat(UiKeys.LanguageLabel, LocalizationSettings.SelectedLocale.Identifier.Code));
+                var langCode = LocalizationSettings.SelectedLocale != null
+                    ? LocalizationSettings.SelectedLocale.Identifier.Code
+                    : LocalizationPreferences.GetSelectedLocaleCodeOrEmpty();
+                if (string.IsNullOrEmpty(langCode))
+                {
+                    langCode = LocalePreferencePreview.PreferCyrillicUi() ? "ru" : "en";
+                }
+
+                GUILayout.Label(Loc.UiFormat(UiKeys.LanguageLabel, langCode));
                 if (GUILayout.Button(Loc.Ui(UiKeys.NextLanguage), ButtonOptions()))
                 {
                     CycleSelectedLocale();
@@ -449,7 +485,7 @@ namespace ShatteredForge.Menu
 
         private static void CycleSelectedLocale()
         {
-            if (!LocalizationSettings.HasSettings)
+            if (!LocalizationBootstrap.AreTablesReady || !LocalizationSettings.HasSettings)
             {
                 return;
             }
@@ -524,6 +560,54 @@ namespace ShatteredForge.Menu
                 0f,
                 0f);
             GUI.depth = prevDepth;
+        }
+
+        private static void DrawMenuLoadingShell()
+        {
+            var titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 22,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = Color.white }
+            };
+            var title = MenuWarmStrings.GameTitle;
+            var titleH = titleStyle.CalcHeight(new GUIContent(title), Screen.width);
+            GUI.Label(new Rect(0f, Screen.height * 0.4f, Screen.width, titleH + 8f), title, titleStyle);
+
+            var subStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 15,
+                fontStyle = FontStyle.Italic,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color(0.75f, 0.75f, 0.78f, 1f) }
+            };
+            var sub = Loc.Ui(UiKeys.LoadingGameplay);
+            var subH = subStyle.CalcHeight(new GUIContent(sub), Screen.width);
+            GUI.Label(new Rect(0f, Screen.height * 0.4f + titleH + 10f, Screen.width, subH + 8f), sub, subStyle);
+
+            var cx = Screen.width * 0.5f;
+            var cy = Screen.height * 0.68f;
+            const float orbitR = 22f;
+            const float dotSize = 6f;
+            var t = Time.unscaledTime;
+            for (var i = 0; i < 6; i++)
+            {
+                var a = (float)(t * 1.65 + i * (Mathf.PI * 2f / 6f));
+                var px = cx + Mathf.Cos(a) * orbitR - dotSize * 0.5f;
+                var py = cy + Mathf.Sin(a) * orbitR - dotSize * 0.5f;
+                var pulse = 0.35f + 0.65f * (0.5f + 0.5f * Mathf.Sin((float)(t * 2.8 + i * 0.9)));
+                var col = new Color(0.45f, 0.65f, 0.9f, pulse);
+                GUI.DrawTexture(
+                    new Rect(px, py, dotSize, dotSize),
+                    Texture2D.whiteTexture,
+                    ScaleMode.StretchToFill,
+                    false,
+                    0f,
+                    col,
+                    0f,
+                    0f);
+            }
         }
 
         private void DrawDeleteProfileControls()

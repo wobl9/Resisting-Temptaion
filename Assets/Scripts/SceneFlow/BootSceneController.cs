@@ -107,7 +107,8 @@ namespace ShatteredForge.SceneFlow
                 0f,
                 0f);
 
-            var title = Loc.Ui(UiKeys.GameTitle);
+            // Avoid Unity Localization on this scene: synchronous init blocks the main thread for ~1–2s and freezes IMGUI.
+            var title = BootCopy.Title;
             var titleStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = Mathf.Clamp(34 + Screen.width / 80, 28, 46),
@@ -125,7 +126,7 @@ namespace ShatteredForge.SceneFlow
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = MutedText }
             };
-            var sub = Loc.Ui(UiKeys.BootOpeningLine);
+            var sub = BootCopy.Subtitle;
             var subH = subStyle.CalcHeight(new GUIContent(sub), Screen.width);
             GUI.Label(new Rect(0f, Screen.height * 0.36f + titleH + 18f, Screen.width, subH + 8f), sub, subStyle);
 
@@ -166,11 +167,11 @@ namespace ShatteredForge.SceneFlow
             var y = Screen.height * 0.38f;
             GUILayout.BeginArea(new Rect(x, y, width, 200f));
             var h = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold, normal = { textColor = AccentGold } };
-            GUILayout.Label(Loc.Ui(UiKeys.LoadingErrorTitle), h);
+            GUILayout.Label(BootCopy.ErrorTitle, h);
             GUILayout.Space(10f);
             GUILayout.TextArea(_errorMessage, GUILayout.Height(72f));
             GUILayout.Space(10f);
-            if (GUILayout.Button(Loc.Ui(UiKeys.LoadingBackToMenu), GUILayout.Height(32f)))
+            if (GUILayout.Button(BootCopy.BackToMenu, GUILayout.Height(32f)))
             {
                 SceneManager.LoadScene(SceneNames.DefaultMenu, LoadSceneMode.Single);
             }
@@ -180,8 +181,6 @@ namespace ShatteredForge.SceneFlow
 
         private IEnumerator BootToMenuCoroutine()
         {
-            yield return null;
-
             AsyncOperation op;
             try
             {
@@ -270,6 +269,25 @@ namespace ShatteredForge.SceneFlow
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Lightweight copy for boot only — matches table strings; keeps boot scene free of Localization package work on startup.
+        /// </summary>
+        private static class BootCopy
+        {
+            public static string Title => "SHATTERED FORGE";
+
+            public static string Subtitle =>
+                PreferCyrillicUi() ? "Кузня пробуждается…" : "The forge stirs…";
+
+            public static string ErrorTitle =>
+                PreferCyrillicUi() ? "Ошибка загрузки сцены" : "Scene load error";
+
+            public static string BackToMenu =>
+                PreferCyrillicUi() ? "В меню" : "Back to menu";
+
+            private static bool PreferCyrillicUi() => LocalePreferencePreview.PreferCyrillicUi();
         }
     }
 }

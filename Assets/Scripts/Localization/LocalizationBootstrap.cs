@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
@@ -5,19 +6,41 @@ using UnityEngine.Localization.Settings;
 namespace ShatteredForge.Localization
 {
     /// <summary>
-    /// Ensures Unity Localization selects a predictable default (ru) unless the player chose otherwise.
-    /// Attach to the same bootstrap object as the main menu (executes in Awake before other UI scripts on the same GO only if scripted execution order is configured; otherwise rely on Unity script order on the object).
+    /// Loads Unity Localization tables in the background; UI uses <see cref="MenuWarmStrings"/> until <see cref="AreTablesReady"/>.
     /// </summary>
     [DefaultExecutionOrder(-1000)]
     public sealed class LocalizationBootstrap : MonoBehaviour
     {
+        /// <summary>
+        /// True after <see cref="LocalizationSettings.InitializationOperation"/> completes and locale prefs are applied.
+        /// </summary>
+        public static bool AreTablesReady { get; private set; }
+
         private void Awake()
         {
-            // IMGUI uses synchronous localized string evaluation in this prototype.
-            // Note: synchronous init is not supported on WebGL per package docs.
-            LocalizationSettings.InitializeSynchronously = true;
+            AreTablesReady = false;
+            LocalizationSettings.InitializeSynchronously = false;
+            StartCoroutine(LoadTablesAndApplyLocaleCoroutine());
+        }
 
+        private void OnDestroy()
+        {
+            AreTablesReady = false;
+        }
+
+        private static IEnumerator LoadTablesAndApplyLocaleCoroutine()
+        {
+            if (!LocalizationSettings.HasSettings)
+            {
+                AreTablesReady = true;
+                yield break;
+            }
+
+            yield return LocalizationSettings.InitializationOperation;
+
+            LocalizationSettings.InitializeSynchronously = true;
             ApplyLocalePreference();
+            AreTablesReady = true;
         }
 
         private static void ApplyLocalePreference()
