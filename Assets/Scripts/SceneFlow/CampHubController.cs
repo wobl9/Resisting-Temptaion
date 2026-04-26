@@ -77,6 +77,12 @@ namespace ShatteredForge.SceneFlow
 
             // Before other scripts' Awake (e.g. SimplePlayerController): ensure CC + mesh exist.
             EnsureCampAvatar();
+            CampHubLandmarkDresser.Dress(shopAnchor, forgeAnchor, alchemyAnchor, dungeonAnchor);
+            CampHubAvatarPrototypeVisuals.EnsureOn(playerBody != null ? playerBody.gameObject : null);
+
+            // Stale "resume expedition" from a prior session/editor run must not hijack GameplayScene Awake
+            // (otherwise PlayableLoopDemo restores an old run instead of honouring dungeon entry from camp).
+            MenuSessionWriter.ClearResumeIntent();
         }
 
         private void Update()
@@ -296,6 +302,7 @@ namespace ShatteredForge.SceneFlow
             }
 
             PersistAccountIfNeeded();
+            PendingCampDungeonRequest.Set();
             MenuSessionWriter.SetPendingDungeonEntry(true);
             SceneNavigation.GoTo(gameplaySceneName.Trim());
         }

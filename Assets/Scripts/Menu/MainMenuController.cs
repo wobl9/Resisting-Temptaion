@@ -55,6 +55,8 @@ namespace ShatteredForge.Menu
 
         private void Awake()
         {
+            PendingCampDungeonRequest.Reset();
+
             if (string.IsNullOrEmpty(_newProfileName))
             {
                 _newProfileName = MenuWarmStrings.DefaultNewProfileName;

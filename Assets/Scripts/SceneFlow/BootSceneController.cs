@@ -55,6 +55,7 @@ namespace ShatteredForge.SceneFlow
         private void Start()
         {
             SceneNavigation.ResetBusy();
+            PendingCampDungeonRequest.Reset();
             if (!IsSceneInBuildSettings(SceneNames.DefaultMenu))
             {
                 _errorMessage =

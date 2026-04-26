@@ -1,4 +1,5 @@
 using ShatteredForge.Combat;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -7,10 +8,19 @@ namespace ShatteredForge.SceneFlow
 {
     /// <summary>
     /// Camp camera: Gothic-style mouse look (yaw rotates hero, pitch tilts camera), third-person offset, atmosphere.
+    /// Optional Cinemachine 3 orbital + rotation composer (free look) with soft Perlin noise when a noise profile is assigned.
     /// </summary>
     [DefaultExecutionOrder(-35)]
     public sealed class CampHubCameraRig : MonoBehaviour
     {
+        [Header("Driver")]
+        [Tooltip("Use Cinemachine 3 (orbital follow + rotation composer). If false, legacy manual camera path.")]
+        [SerializeField] private bool useCinemachine = true;
+        [Tooltip("Optional; assign e.g. a hand-held noise profile from the Cinemachine package samples. Leave empty to skip shake.")]
+        [SerializeField] private NoiseSettings cinemachineSoftNoiseProfile;
+        [SerializeField] [Min(0f)] private float cinemachineNoiseAmplitude = 0.22f;
+        [SerializeField] [Min(0f)] private float cinemachineNoiseFrequency = 0.1f;
+
         [Header("Follow / orbit")]
         [SerializeField] private Transform followTarget;
         [SerializeField] private Camera targetCamera;
@@ -49,6 +59,7 @@ namespace ShatteredForge.SceneFlow
         private float _pitchDeg;
         private bool _anglesInitialized;
         private bool _lookSuspendedFromUi;
+        private CampHubCinemachineCamp _cinemachineCamp;
 
         private void Awake()
         {
@@ -98,10 +109,33 @@ namespace ShatteredForge.SceneFlow
             {
                 LockCursor();
             }
+
+            if (useCinemachine && followTarget != null && targetCamera != null)
+            {
+                _cinemachineCamp = CampHubCinemachineCamp.TryBuild(
+                    targetCamera,
+                    followTarget,
+                    followOffsetLocal.magnitude,
+                    lookHeight,
+                    fieldOfView,
+                    pitchMin,
+                    pitchMax,
+                    _yawDeg,
+                    _pitchDeg,
+                    cinemachineSoftNoiseProfile,
+                    cinemachineNoiseAmplitude,
+                    cinemachineNoiseFrequency,
+                    transform);
+                if (_cinemachineCamp == null)
+                {
+                    Debug.LogWarning($"{nameof(CampHubCameraRig)}: Cinemachine setup failed; check console / package install.");
+                }
+            }
         }
 
         private void OnDestroy()
         {
+            _cinemachineCamp?.DestroyRig();
             if (_atmosphereApplied)
             {
                 RenderSettings.fog = false;
@@ -191,6 +225,12 @@ namespace ShatteredForge.SceneFlow
             followTarget.rotation = Quaternion.Euler(0f, _yawDeg, 0f);
             var ctrl = followTarget.GetComponent<SimplePlayerController>();
             ctrl?.SyncPlanarFacingFromTransform();
+
+            if (_cinemachineCamp != null)
+            {
+                _cinemachineCamp.SyncAxes(_yawDeg, _pitchDeg);
+                return;
+            }
 
             var orbit = Quaternion.Euler(_pitchDeg, _yawDeg, 0f);
             var pivotTarget = OrbitPivotWorld(followTarget.position);

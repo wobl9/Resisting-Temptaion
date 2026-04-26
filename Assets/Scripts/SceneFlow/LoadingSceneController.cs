@@ -27,6 +27,7 @@ namespace ShatteredForge.SceneFlow
             if (string.IsNullOrWhiteSpace(_targetSceneName))
             {
                 Debug.LogWarning($"{nameof(LoadingSceneController)}: no pending scene; returning to {SceneNames.DefaultMenu}.");
+                PendingCampDungeonRequest.Reset();
                 SceneManager.LoadScene(SceneNames.DefaultMenu, LoadSceneMode.Single);
                 return;
             }

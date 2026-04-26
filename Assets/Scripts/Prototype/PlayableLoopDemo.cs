@@ -6,6 +6,7 @@ using ShatteredForge.Input;
 using ShatteredForge.Menu;
 using ShatteredForge.Progression;
 using ShatteredForge.Run;
+using ShatteredForge.SceneFlow;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -74,6 +75,7 @@ namespace ShatteredForge.Prototype
                 _profileId = string.Empty;
                 _account = BuildInitialAccount();
                 _lastOutcome = "No profile loaded (demo fallback).";
+                PendingCampDungeonRequest.Consume();
                 MenuSessionWriter.ConsumePendingDungeonEntry();
                 BootstrapFreshExpedition();
                 return;
@@ -93,6 +95,7 @@ namespace ShatteredForge.Prototype
 
             if (resumeExpedition && _profile.hasActiveExpedition)
             {
+                PendingCampDungeonRequest.Reset();
                 MenuSessionWriter.ConsumePendingDungeonEntry();
                 RestoreExpeditionFromProfile(_profile);
                 _lastOutcome = "Expedition resumed.";
@@ -107,11 +110,14 @@ namespace ShatteredForge.Prototype
             }
 
             ClearExpedition(_profile, save: true);
-            var enterDungeonFromHub = MenuSessionWriter.ConsumePendingDungeonEntry();
+            var enterDungeonFromHub =
+                PendingCampDungeonRequest.Consume() || MenuSessionWriter.ConsumePendingDungeonEntry();
             if (enterDungeonFromHub)
             {
                 BootstrapFreshExpedition();
-                _lastOutcome = "Expedition started from camp.";
+                _lastOutcome = _state == DemoState.InRun
+                    ? "Expedition started from camp."
+                    : "Cannot start run: no gear in stash. Check profile save.";
             }
             else
             {
@@ -324,7 +330,13 @@ namespace ShatteredForge.Prototype
 
         private void BootstrapFreshExpedition()
         {
-            if (_state == DemoState.InRun || _account.stash.Count == 0)
+            if (_state == DemoState.InRun)
+            {
+                return;
+            }
+
+            EnsureMinimalRunGear(_account);
+            if (_account.stash.Count == 0)
             {
                 return;
             }
@@ -349,6 +361,26 @@ namespace ShatteredForge.Prototype
             _rooms = _runGenerator.GenerateAct(UnityEngine.Random.Range(minRoomsPerAct, maxRoomsPerAct + 1));
             _state = DemoState.InRun;
             _lastOutcome = "Run started.";
+        }
+
+        private static void EnsureMinimalRunGear(AccountState account)
+        {
+            if (account == null || account.stash.Count > 0)
+            {
+                return;
+            }
+
+            var seed = BuildInitialAccount();
+            foreach (var item in seed.stash)
+            {
+                account.stash.Add(new ItemInstance
+                {
+                    id = Guid.NewGuid().ToString(),
+                    templateId = item.templateId,
+                    rarity = item.rarity,
+                    enhanceLevel = item.enhanceLevel
+                });
+            }
         }
 
         private static AccountState BuildInitialAccount()

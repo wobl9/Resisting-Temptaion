@@ -435,6 +435,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8f7a6b5c4d3e2f109876543210fedcb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.SceneFlow.CampHubCameraRig
+  useCinemachine: 1
+  cinemachineSoftNoiseProfile: {fileID: 0}
+  cinemachineNoiseAmplitude: 0.22
+  cinemachineNoiseFrequency: 0.1
   followTarget: {fileID: 0}
   targetCamera: {fileID: 330585545}
   followOffsetLocal: {x: 0.35, y: 2.15, z: -5.4}
