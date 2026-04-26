@@ -150,6 +150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.Menu.MainMenuController
   gameplaySceneName: GameplayScene
+  hubSceneName: CampHub
 --- !u!4 &260896213
 Transform:
   m_ObjectHideFlags: 0

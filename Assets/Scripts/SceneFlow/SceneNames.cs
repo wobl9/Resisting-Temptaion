@@ -13,6 +13,11 @@ namespace ShatteredForge.SceneFlow
         public const string Loading = "Loading";
 
         /// <summary>
+        /// RU: «лагерь» — сцена подготовки к вылазке перед подземельем (файл <c>CampHub.unity</c>, имя сцены в билде).
+        /// </summary>
+        public const string CampHub = "CampHub";
+
+        /// <summary>
         /// First menu scene used when the loading scene has no valid pending target.
         /// </summary>
         public const string DefaultMenu = "SampleScene";

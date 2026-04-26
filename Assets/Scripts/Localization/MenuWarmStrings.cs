@@ -64,6 +64,9 @@ namespace ShatteredForge.Localization
                 UiKeys.ErrorGameplaySceneMissing => P(
                     "Не удалось запустить игру: не настроена сцена геймплея.",
                     "Failed to start: gameplay scene is not configured."),
+                UiKeys.ErrorHubSceneMissing => P(
+                    "Не удалось открыть лагерь: сцена лагеря не в Build Settings.",
+                    "Failed to open camp: hub scene is missing from Build Settings."),
                 UiKeys.LoadingGameplay => P("Загрузка...", "Loading..."),
                 UiKeys.LoadingErrorTitle => P("Ошибка загрузки сцены", "Scene load error"),
                 UiKeys.LoadingBackToMenu => P("В меню", "Back to menu"),

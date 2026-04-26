@@ -23,6 +23,7 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 | Профиль | `Profile` | Player identity slot; owns expedition save data and meta progression. |
 | Активный профиль | `Active profile` | The profile currently selected for play; persisted in profile index + mirrored to `PlayerPrefs["sf.active_profile_id"]`. |
 | Вылазка | `Expedition` | A persisted in-progress run attached to a profile (has checkpoint data). Distinct from “starting gameplay scene” without expedition state. |
+| Лагерь | `Camp` / `CampHub` | Сцена `CampHub` (`CampHub.unity`): покупки/заглушки сервисов и вход в подземелье. В коде и билде имя сцены — **`CampHub`**; в обсуждениях и доках RU — **«лагерь»**. |
 | Чекпоинт вылазки | `Expedition checkpoint` | Last saved resume point inside an active expedition. |
 | Сохранённые данные | `Saved data` | At minimum: profiles index + per-profile files under `Application.persistentDataPath/ShatteredForge/`. Technical map: `Docs/ShatteredForge/Profile_persistence.md`. |
 
@@ -32,7 +33,7 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 
 1. There is at most one active profile at a time.
 2. `Continue Game` is only shown when an active profile exists **and** an active expedition exists for that profile.
-3. `New Game` opens gameplay scene. `Continue Game` opens gameplay scene **when it is shown**.
+3. `New Game` opens the **лагерь** (`CampHub`) first (new expedition staging); from there the player enters the **gameplay** (dungeon) scene. `Continue Game` opens the gameplay scene directly **when it is shown** (resume checkpoint).
 4. Profile operations (create/select/delete) keep storage and active profile state consistent.
 5. `Settings` is always reachable from the main menu.
 6. `Quit Game` always exits the game (or stops Play Mode in Unity Editor).
@@ -76,8 +77,16 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 - Title: Create first profile and start game
 - Given: no profiles in storage
 - When: user presses `New Game`, enters a profile name, confirms
-- Then: profile is created, set active, gameplay scene opens immediately after confirm
+- Then: profile is created, set active, **camp hub** scene opens after confirm (then player enters dungeon from hub)
 - Notes: replaces older flow where `Create Game` immediately launched without a dedicated name step
+- Status: `Approved`
+
+- ID: `MNU-104`
+- Title: New expedition enters dungeon from camp
+- Given: active profile, no resume (new expedition / fresh start from menu)
+- When: user finishes camp staging and confirms entry to the dungeon
+- Then: gameplay scene loads and a new run starts (`sf.pending_dungeon_entry` handoff)
+- Notes: `Continue Game` must not require the camp hub
 - Status: `Approved`
 
 - ID: `MNU-102`
@@ -108,7 +117,7 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 - Title: First launch profile creation flow
 - Given: no profiles exist in storage
 - When: user presses `New Game`
-- Then: a dedicated screen opens asking for a new profile name; after confirm, gameplay starts immediately
+- Then: a dedicated screen opens asking for a new profile name; after confirm, **camp hub** opens (then dungeon from hub)
 - Notes: user text referenced `Start Game` wording; canonical action is `New Game`
 - Status: `Approved`
 

@@ -69,6 +69,19 @@ namespace ShatteredForge.Menu
                 sb.AppendLine("OK: MenuSessionWriter prefs roundtrip.");
             }
 
+            MenuSessionWriter.SetPendingDungeonEntry(true);
+            var pendingPeek = PlayerPrefs.GetInt(MenuSessionPrefs.PendingDungeonEntryKey, 0) == 1;
+            var pendingConsumed = MenuSessionWriter.ConsumePendingDungeonEntry();
+            var pendingCleared = !PlayerPrefs.HasKey(MenuSessionPrefs.PendingDungeonEntryKey);
+            if (!pendingPeek || !pendingConsumed || !pendingCleared)
+            {
+                sb.AppendLine("ISSUE: pending dungeon entry prefs roundtrip failed.");
+            }
+            else
+            {
+                sb.AppendLine("OK: pending dungeon entry consume.");
+            }
+
             return sb.ToString();
         }
     }

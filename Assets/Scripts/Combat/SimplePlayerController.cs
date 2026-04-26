@@ -13,6 +13,13 @@ namespace ShatteredForge.Combat
         [SerializeField] private float fireInterval = 0.35f;
         [SerializeField] private Transform fireOrigin;
 
+        [Header("Camp / mouse-look mode")]
+        [Tooltip("WASD move along transform.right/forward (Gothic-style), not world XZ.")]
+        [SerializeField] private bool moveRelativeToFacing;
+
+        [Tooltip("If off, yaw comes from external driver (e.g. camp camera rig); movement no longer steers facing.")]
+        [SerializeField] private bool rotateFromMovementDirection = true;
+
         private CharacterController _controller;
         private SimpleProjectile _projectileTemplate;
         private RunState _runState;
@@ -21,6 +28,28 @@ namespace ShatteredForge.Combat
         private Vector3 _lastMoveDir = Vector3.forward;
 
         public Vector3 PlanarFacingDirection => _lastMoveDir;
+
+        /// <summary>
+        /// Call after external code sets <c>transform.rotation</c> (camp mouse yaw) so auto-fire / facing stay consistent.
+        /// </summary>
+        public void SyncPlanarFacingFromTransform()
+        {
+            var f = transform.forward;
+            f.y = 0f;
+            if (f.sqrMagnitude > 0.0001f)
+            {
+                _lastMoveDir = f.normalized;
+            }
+        }
+
+        /// <summary>
+        /// Camp hub: strafe relative to view, camera drives yaw.
+        /// </summary>
+        public void ConfigureForCampHub()
+        {
+            moveRelativeToFacing = true;
+            rotateFromMovementDirection = false;
+        }
 
         private void Awake()
         {
@@ -40,9 +69,27 @@ namespace ShatteredForge.Combat
 
         private void Update()
         {
-            var move = DemoInput.ReadMoveXZ();
+            var raw = DemoInput.ReadMoveXZ();
+            Vector3 move;
+            if (moveRelativeToFacing)
+            {
+                move = transform.right * raw.x + transform.forward * raw.z;
+                if (move.sqrMagnitude > 1f)
+                {
+                    move.Normalize();
+                }
+                else if (move.sqrMagnitude > 0.0001f)
+                {
+                    move.Normalize();
+                }
+            }
+            else
+            {
+                move = raw;
+            }
+
             _controller.Move(move * (moveSpeed * Time.deltaTime));
-            if (move.sqrMagnitude > 0.0001f)
+            if (rotateFromMovementDirection && move.sqrMagnitude > 0.0001f)
             {
                 _lastMoveDir = move.normalized;
                 var targetRotation = Quaternion.LookRotation(_lastMoveDir, Vector3.up);

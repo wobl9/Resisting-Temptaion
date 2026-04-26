@@ -74,6 +74,7 @@ namespace ShatteredForge.Prototype
                 _profileId = string.Empty;
                 _account = BuildInitialAccount();
                 _lastOutcome = "No profile loaded (demo fallback).";
+                MenuSessionWriter.ConsumePendingDungeonEntry();
                 BootstrapFreshExpedition();
                 return;
             }
@@ -92,6 +93,7 @@ namespace ShatteredForge.Prototype
 
             if (resumeExpedition && _profile.hasActiveExpedition)
             {
+                MenuSessionWriter.ConsumePendingDungeonEntry();
                 RestoreExpeditionFromProfile(_profile);
                 _lastOutcome = "Expedition resumed.";
                 PersistAccount();
@@ -105,7 +107,18 @@ namespace ShatteredForge.Prototype
             }
 
             ClearExpedition(_profile, save: true);
-            BootstrapFreshExpedition();
+            var enterDungeonFromHub = MenuSessionWriter.ConsumePendingDungeonEntry();
+            if (enterDungeonFromHub)
+            {
+                BootstrapFreshExpedition();
+                _lastOutcome = "Expedition started from camp.";
+            }
+            else
+            {
+                _state = DemoState.Hub;
+                _lastOutcome = "Camp hub expected before dungeon. Press R to start (editor), or return to menu.";
+            }
+
             PersistAccount();
             PersistExpedition();
         }

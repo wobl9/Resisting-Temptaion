@@ -166,6 +166,7 @@ namespace ShatteredForge.EditorTools
 
             Set(UiKeys.ErrorNoExpeditionToContinue, "Нет активной вылазки для продолжения.", "No active expedition to continue.");
             Set(UiKeys.ErrorGameplaySceneMissing, "Не удалось запустить игру: не настроена сцена геймплея.", "Failed to start: gameplay scene is not configured.");
+            Set(UiKeys.ErrorHubSceneMissing, "Не удалось открыть лагерь: сцена лагеря не в Build Settings.", "Failed to open camp: hub scene is missing from Build Settings.");
             Set(UiKeys.LoadingGameplay, "Загрузка...", "Loading...");
             Set(UiKeys.LoadingErrorTitle, "Ошибка загрузки сцены", "Scene load error");
             Set(UiKeys.LoadingBackToMenu, "В меню", "Back to menu");

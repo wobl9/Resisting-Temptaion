@@ -58,6 +58,7 @@ namespace ShatteredForge.Localization
 
         public const string ErrorNoExpeditionToContinue = "ERROR_NO_EXPEDITION_TO_CONTINUE";
         public const string ErrorGameplaySceneMissing = "ERROR_GAMEPLAY_SCENE_MISSING";
+        public const string ErrorHubSceneMissing = "ERROR_HUB_SCENE_MISSING";
         public const string LoadingGameplay = "LOADING_GAMEPLAY";
         public const string LoadingErrorTitle = "LOADING_ERROR_TITLE";
         public const string LoadingBackToMenu = "LOADING_BACK_TO_MENU";

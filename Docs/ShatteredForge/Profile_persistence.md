@@ -46,6 +46,7 @@ Between menu scene and gameplay scene we still use **PlayerPrefs** (fast, scene-
 |-----|----------|---------|
 | `sf.active_profile_id` | `MenuSessionPrefs.ActiveProfileIdKey` | Which profile id the next gameplay load should use. |
 | `sf.resume_expedition` | `MenuSessionPrefs.ResumeExpeditionKey` | `1` if user chose Continue (resume expedition), cleared after read. |
+| `sf.pending_dungeon_entry` | `MenuSessionPrefs.PendingDungeonEntryKey` | `1` after the player leaves the **camp hub** for the dungeon; cleared when `PlayableLoopDemo` starts the fresh run. |
 
 Writers: `MenuSessionWriter`, and `MainMenuController` when deleting a profile / syncing prefs.
 

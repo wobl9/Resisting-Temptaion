@@ -27,6 +27,9 @@ namespace ShatteredForge.Menu
         [Header("Scene routing")]
         [SerializeField] private string gameplaySceneName = "";
 
+        [Tooltip("Loaded for a new expedition (not Continue). Leave empty to use CampHub.")]
+        [SerializeField] private string hubSceneName = "";
+
         [Header("Profile storage")]
         [SerializeField] private ProfileStorageMode profileStorageMode = ProfileStorageMode.Local;
         [SerializeField] private string remoteProfileStorageBaseUrl = "";
@@ -530,20 +533,64 @@ namespace ShatteredForge.Menu
 
             MenuSessionWriter.WriteGameplayLaunchIntent(profileId, resumeExpedition);
 
-            var sceneToLoad = gameplaySceneName;
-            if (string.IsNullOrWhiteSpace(sceneToLoad))
+            if (resumeExpedition)
             {
-                sceneToLoad = SceneManager.GetActiveScene().name;
-            }
+                var gameplayTarget = gameplaySceneName;
+                if (string.IsNullOrWhiteSpace(gameplayTarget))
+                {
+                    gameplayTarget = SceneManager.GetActiveScene().name;
+                }
 
-            if (!string.IsNullOrWhiteSpace(sceneToLoad))
-            {
-                SceneNavigation.GoTo(sceneToLoad);
+                if (string.IsNullOrWhiteSpace(gameplayTarget) || !IsSceneInBuildSettings(gameplayTarget))
+                {
+                    _state = ScreenState.Main;
+                    _status = Loc.Ui(UiKeys.ErrorGameplaySceneMissing);
+                    return;
+                }
+
+                SceneNavigation.GoTo(gameplayTarget);
                 return;
             }
 
-            _state = ScreenState.Main;
-            _status = Loc.Ui(UiKeys.ErrorGameplaySceneMissing);
+            var hubTarget = hubSceneName;
+            if (string.IsNullOrWhiteSpace(hubTarget))
+            {
+                hubTarget = SceneNames.CampHub;
+            }
+
+            if (!IsSceneInBuildSettings(hubTarget))
+            {
+                _state = ScreenState.Main;
+                _status = Loc.Ui(UiKeys.ErrorHubSceneMissing);
+                return;
+            }
+
+            SceneNavigation.GoTo(hubTarget);
+        }
+
+        private static bool IsSceneInBuildSettings(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                var path = SceneUtility.GetScenePathByBuildIndex(i);
+                if (string.IsNullOrEmpty(path))
+                {
+                    continue;
+                }
+
+                var name = System.IO.Path.GetFileNameWithoutExtension(path);
+                if (string.Equals(name, sceneName, System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void DrawMenuBackdrop()
