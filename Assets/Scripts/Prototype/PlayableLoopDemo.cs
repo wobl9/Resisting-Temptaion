@@ -30,7 +30,12 @@ namespace ShatteredForge.Prototype
         [Header("Combat (same GameObject as GameBootstrap)")]
         [SerializeField] private CombatRoomBootstrap combatBootstrap;
 
-        private ProfileStorageService _profilesService;
+        [Header("Profile storage")]
+        [SerializeField] private ProfileStorageMode profileStorageMode = ProfileStorageMode.Local;
+        [SerializeField] private string remoteProfileStorageBaseUrl = "";
+        [SerializeField] private string remoteProfileStorageAuthBearer = "";
+
+        private IProfileStorage _profilesService;
         private string _profileId;
         private ProfileData _profile;
 
@@ -47,7 +52,10 @@ namespace ShatteredForge.Prototype
 
         private void Awake()
         {
-            _profilesService = new ProfileStorageService();
+            _profilesService = ProfileStorageFactory.Create(
+                profileStorageMode,
+                remoteProfileStorageBaseUrl,
+                remoteProfileStorageAuthBearer);
             _runController = new RunSessionController(new RiskLossService());
             combatBootstrap = GetComponent<CombatRoomBootstrap>();
             if (combatBootstrap == null)

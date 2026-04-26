@@ -32,7 +32,7 @@ namespace ShatteredForge.Menu
 
     public static class MenuContractAssertions
     {
-        public static MenuContractSnapshot BuildSnapshot(ProfileStorageService profiles)
+        public static MenuContractSnapshot BuildSnapshot(IProfileStorage profiles)
         {
             var list = profiles.LoadProfiles(out var activeId);
             var profileCount = list.Count;

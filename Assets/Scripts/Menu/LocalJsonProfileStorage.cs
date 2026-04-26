@@ -5,56 +5,7 @@ using UnityEngine;
 
 namespace ShatteredForge.Menu
 {
-    [Serializable]
-    public class ProfileSummary
-    {
-        public string id;
-        public string displayName;
-        public string createdAtUtc;
-        public string lastPlayedAtUtc;
-    }
-
-    [Serializable]
-    internal class ProfileIndexData
-    {
-        public string activeProfileId;
-        public List<ProfileSummary> profiles = new();
-    }
-
-    [Serializable]
-    public class ProfileData
-    {
-        public string profileId;
-        public string profileName;
-        public int forgeDust = 2500;
-        public int emberCore = 5;
-        public int sigilToken = 20;
-        public int insuranceSeal = 1;
-        public string createdAtUtc;
-        public string updatedAtUtc;
-
-        // Serialized gameplay account (stash/currencies/skills/etc).
-        public string accountJson = string.Empty;
-
-        // Expedition (in-run) persistence.
-        public bool hasActiveExpedition;
-        public int expeditionSchemaVersion = 1;
-        public int expeditionDemoState; // maps to PlayableLoopDemo.DemoState enum int
-        public int expeditionRunSeed;
-        public int expeditionRoomIndex;
-        public float expeditionHpState = 1f;
-        public int expeditionMinRoomsPerAct = 8;
-        public int expeditionMaxRoomsPerAct = 14;
-        public int expeditionStartingHpPercent = 100;
-        public bool expeditionAutoInsureFirstItem = true;
-        public int expeditionRoomTypesCount;
-        public int[] expeditionRoomTypes = Array.Empty<int>();
-
-        // Full serialized RunState for expedition resume fidelity.
-        public string expeditionRunJson = string.Empty;
-    }
-
-    public class ProfileStorageService
+    public sealed class LocalJsonProfileStorage : IProfileStorage
     {
         private const string RootFolderName = "ShatteredForge";
         private const string ProfilesFolderName = "Profiles";
@@ -84,7 +35,8 @@ namespace ShatteredForge.Menu
                 profileId = profileId,
                 profileName = safeName,
                 createdAtUtc = now,
-                updatedAtUtc = now
+                updatedAtUtc = now,
+                profileRevision = 0
             };
 
             var profilePath = GetProfilePath(profileId);
@@ -184,8 +136,22 @@ namespace ShatteredForge.Menu
                 return;
             }
 
-            EnsureFolders();
             profile.updatedAtUtc = DateTime.UtcNow.ToString("O");
+            profile.profileRevision++;
+            PersistProfileSnapshot(profile);
+        }
+
+        /// <summary>
+        /// Writes profile JSON without bumping <see cref="ProfileData.profileRevision"/> (used by remote mirror layer).
+        /// </summary>
+        internal void PersistProfileSnapshot(ProfileData profile)
+        {
+            if (profile == null || string.IsNullOrWhiteSpace(profile.profileId))
+            {
+                return;
+            }
+
+            EnsureFolders();
             var path = GetProfilePath(profile.profileId);
             File.WriteAllText(path, JsonUtility.ToJson(profile, true));
         }
@@ -235,20 +201,7 @@ namespace ShatteredForge.Menu
             return true;
         }
 
-        private void EnsureFolders()
-        {
-            if (!Directory.Exists(RootFolder))
-            {
-                Directory.CreateDirectory(RootFolder);
-            }
-
-            if (!Directory.Exists(ProfilesFolder))
-            {
-                Directory.CreateDirectory(ProfilesFolder);
-            }
-        }
-
-        private ProfileIndexData LoadIndex()
+        internal ProfileIndexData LoadIndex()
         {
             if (!File.Exists(IndexPath))
             {
@@ -265,14 +218,28 @@ namespace ShatteredForge.Menu
             return index ?? new ProfileIndexData();
         }
 
-        private void SaveIndex(ProfileIndexData index)
+        internal void SaveIndex(ProfileIndexData index)
         {
+            EnsureFolders();
             File.WriteAllText(IndexPath, JsonUtility.ToJson(index, true));
         }
 
-        private string GetProfilePath(string profileId)
+        internal string GetProfilePath(string profileId)
         {
             return Path.Combine(ProfilesFolder, $"profile_{profileId}.json");
+        }
+
+        private void EnsureFolders()
+        {
+            if (!Directory.Exists(RootFolder))
+            {
+                Directory.CreateDirectory(RootFolder);
+            }
+
+            if (!Directory.Exists(ProfilesFolder))
+            {
+                Directory.CreateDirectory(ProfilesFolder);
+            }
         }
     }
 }

@@ -24,7 +24,7 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 | Активный профиль | `Active profile` | The profile currently selected for play; persisted in profile index + mirrored to `PlayerPrefs["sf.active_profile_id"]`. |
 | Вылазка | `Expedition` | A persisted in-progress run attached to a profile (has checkpoint data). Distinct from “starting gameplay scene” without expedition state. |
 | Чекпоинт вылазки | `Expedition checkpoint` | Last saved resume point inside an active expedition. |
-| Сохранённые данные | `Saved data` | At minimum: profiles index + per-profile files under `Application.persistentDataPath/ShatteredForge/`. |
+| Сохранённые данные | `Saved data` | At minimum: profiles index + per-profile files under `Application.persistentDataPath/ShatteredForge/`. Technical map: `Docs/ShatteredForge/Profile_persistence.md`. |
 
 ---
 

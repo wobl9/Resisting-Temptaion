@@ -23,7 +23,7 @@ namespace ShatteredForge.Menu
             sb.AppendLine("MenuContractSmokeTestRunner");
             sb.AppendLine("- sceneAssetPath: " + sceneAssetPath);
 
-            var profiles = new ProfileStorageService();
+            var profiles = ProfileStorageFactory.Create(ProfileStorageMode.Local);
             var snapshot = MenuContractAssertions.BuildSnapshot(profiles);
 
             sb.AppendLine("- profileCount: " + snapshot.profileCount);

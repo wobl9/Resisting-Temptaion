@@ -13,7 +13,7 @@ Legend: `Done` | `In Progress` | `Planned` | `Blocked`
 - Combat room bootstrap and room progression: `Done`
 - Run loss rules with insurance exception: `Done`
 - Main menu controller integration: `In Progress`
-- Profile storage service: `In Progress`
+- Profile persistence (`IProfileStorage`, local JSON + optional remote stub): `In Progress` (see `Docs/ShatteredForge/Profile_persistence.md`)
 - Economy balance pass: `Planned`
 - Sharpening full implementation (+0..+15 rules): `Planned`
 - Socketing and skill tuning production pass: `Planned`
@@ -21,7 +21,7 @@ Legend: `Done` | `In Progress` | `Planned` | `Blocked`
 
 ## Last Updates
 - Added `MainMenuController` script scaffold.
-- Added `ProfileStorageService` script scaffold.
+- Documented profile persistence architecture in `Docs/ShatteredForge/Profile_persistence.md` (`IProfileStorage`, `LocalJsonProfileStorage`, factory defaults = local only; remote for later).
 - Added/updated sample scene for menu and loop setup.
 - Confirmed playable loop status split: demo loop is `Done`, GDD-aligned loop remains `In Progress`.
 - Implemented profile deletion flow (with confirmation) in menu and storage service; pending manual play-mode verification.

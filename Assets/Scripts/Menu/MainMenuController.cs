@@ -21,8 +21,13 @@ namespace ShatteredForge.Menu
         [Header("Scene routing")]
         [SerializeField] private string gameplaySceneName = "";
 
+        [Header("Profile storage")]
+        [SerializeField] private ProfileStorageMode profileStorageMode = ProfileStorageMode.Local;
+        [SerializeField] private string remoteProfileStorageBaseUrl = "";
+        [SerializeField] private string remoteProfileStorageAuthBearer = "";
+
         private ScreenState _state = ScreenState.Main;
-        private ProfileStorageService _profilesService;
+        private IProfileStorage _profilesService;
         private List<ProfileSummary> _profiles = new();
         private string _activeProfileId;
 
@@ -39,7 +44,10 @@ namespace ShatteredForge.Menu
 
         private void Awake()
         {
-            _profilesService = new ProfileStorageService();
+            _profilesService = ProfileStorageFactory.Create(
+                profileStorageMode,
+                remoteProfileStorageBaseUrl,
+                remoteProfileStorageAuthBearer);
             ReloadProfiles();
 
             if (string.IsNullOrEmpty(_newProfileName))

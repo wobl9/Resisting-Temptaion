@@ -42,3 +42,4 @@
 - Demo boot/setup: `Docs/ShatteredForge/Playable_demo_setup.md`
 - Delivery specs: `Docs/ShatteredForge/VerticalSlice_delivery_spec.md`
 - Start menu logic contract: `Docs/ShatteredForge/Menu_logic_contract.md`
+- Profile save system (`IProfileStorage`, disk paths, prefs bridge, future remote): `Docs/ShatteredForge/Profile_persistence.md`
