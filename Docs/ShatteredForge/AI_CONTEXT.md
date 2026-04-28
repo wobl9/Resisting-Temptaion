@@ -38,6 +38,7 @@
   - hub -> run -> room progression -> extraction/death -> hub
 
 ## Canonical Docs
+- Current factual snapshot (start here): `Docs/ShatteredForge/CURRENT_TRUTH.md`
 - Vision and systems: `Docs/ShatteredForge/GDD_v1.md`
 - Demo boot/setup: `Docs/ShatteredForge/Playable_demo_setup.md`
 - Delivery specs: `Docs/ShatteredForge/VerticalSlice_delivery_spec.md`

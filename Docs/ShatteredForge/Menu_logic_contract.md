@@ -32,15 +32,15 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 ## Core Invariants (Must Always Hold)
 
 1. There is at most one active profile at a time.
-2. `Continue Game` is only shown when an active profile exists **and** an active expedition exists for that profile.
+2. `Continue Game` is shown when an active profile exists. In full production behavior it should resume an active expedition checkpoint; current prototype may fallback to scene reload/start if expedition checkpoint system is not fully wired yet.
 3. `New Game` opens the **лагерь** (`CampHub`) first (new expedition staging); from there the player enters the **gameplay** (dungeon) scene. `Continue Game` opens the gameplay scene directly **when it is shown** (resume checkpoint).
 4. Profile operations (create/select/delete) keep storage and active profile state consistent.
 5. `Settings` is always reachable from the main menu.
 6. `Quit Game` always exits the game (or stops Play Mode in Unity Editor).
 7. First-run onboarding: if no saved profiles exist, the main menu shows exactly three actions: `New Game`, `Settings`, `Quit Game`.
-8. Returning player: if saved profiles exist, the main menu shows the active profile entry plus `New Game`, `Settings`, `Quit Game`, and conditionally `Continue Game` when an active expedition exists.
-9. `Continue Game` must resume from the last saved expedition checkpoint for the active profile (not start a fresh expedition unless explicitly chosen).
-10. If no active expedition exists, `Continue Game` must be **hidden** (not disabled-in-place).
+8. Returning player: if saved profiles exist, the main menu shows the active profile entry/button plus `New Game`, `Settings`, `Quit Game`, and `Continue Game`.
+9. Target behavior: `Continue Game` resumes from the last saved expedition checkpoint for the active profile; temporary prototype fallback may start/reload scene when checkpoint data is unavailable.
+10. Active profile entry opens profile actions (switch/create).
 
 ---
 
@@ -51,7 +51,7 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 | MNU-001 | No profiles exist | Press `New Game` | Profile name prompt opens | Approved |
 | MNU-002 | No profiles exist | Attempt `Continue Game` | `Continue Game` is not rendered; no invalid launch | Approved |
 | MNU-003 | Profiles exist, active profile set, active expedition exists | Press `Continue Game` | Gameplay scene opens and resumes last saved expedition checkpoint for active profile | Approved |
-| MNU-009 | Profiles exist, active profile set, no active expedition | Attempt `Continue Game` | `Continue Game` is not rendered | Approved |
+| MNU-009 | Profiles exist, active profile set, no active expedition | Press `Continue Game` | Prototype: starts/reloads gameplay scene; Production target: hidden or true resume-only, pending expedition checkpoint contract finalization | Draft |
 | MNU-004 | Profiles exist | Select profile `P` | `P` becomes active and persisted | Approved |
 | MNU-005 | Profiles exist, active `P` | Delete active profile `P` | `P` removed from storage; new active profile chosen or cleared if none left | Approved |
 | MNU-006 | Profiles exist, non-active `P` | Delete profile `P` | `P` removed from storage; active profile unchanged | Approved |
@@ -133,8 +133,8 @@ Rule: **player-facing strings can be Russian**, but this document’s **canonica
 - Title: Active profile quick menu
 - Given: an active profile exists
 - When: user presses the active profile button
-- Then: a profile menu opens where user can switch to another profile or delete the current profile
-- Notes: must not lose active profile selection accidentally; deletion must update active selection rules from `MNU-103`
+- Then: a profile menu opens where user can switch profile or create a new profile
+- Notes: current implemented profile-actions menu contains switch/create actions
 - Status: `Approved`
 
 ---

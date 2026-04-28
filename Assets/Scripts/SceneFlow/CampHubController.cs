@@ -3,6 +3,7 @@ using ShatteredForge.Combat;
 using ShatteredForge.Core;
 using ShatteredForge.Input;
 using ShatteredForge.Items;
+using ShatteredForge.Levels;
 using ShatteredForge.Menu;
 using ShatteredForge.Progression;
 using ShatteredForge.UI;
@@ -65,7 +66,8 @@ namespace ShatteredForge.SceneFlow
         private CraftingRecipeCatalog _craftingRecipeCatalogRuntime;
         private PlayerInventoryPanel _inventoryPanel;
         private CampCharacterSheetPanel _characterSheet;
-        private CampPauseMenuView _pauseMenuView;
+        private CampLevelPortalView _levelPortalView;
+        private IPauseMenuView _pauseMenuView;
         private bool _pauseMenuOpen;
         private bool _pauseSettingsOpen;
         private float _savedTimeScale = 1f;
@@ -171,6 +173,7 @@ namespace ShatteredForge.SceneFlow
             _fullscreen = Screen.fullScreen;
             _resolutions = Screen.resolutions;
             _resolutionIndex = FindCurrentResolutionIndex();
+            EnsureLevelPortalView();
             EnsurePauseMenuView();
         }
 
@@ -185,6 +188,7 @@ namespace ShatteredForge.SceneFlow
             var suppressed = (_characterSheet != null && _characterSheet.IsOpen) ||
                              (_inventoryPanel != null && _inventoryPanel.IsOpen) ||
                              _economyPanel != CampHubEconomyDraw.EconomyPanelKind.None ||
+                             (_levelPortalView != null && _levelPortalView.IsOpen) ||
                              _pauseMenuOpen;
             rig.SetLookFromUiSuppressed(suppressed);
         }
@@ -197,6 +201,16 @@ namespace ShatteredForge.SceneFlow
                 if (DemoInput.KeyDown(Key.Escape))
                 {
                     SetPauseMenuOpen(false);
+                }
+                return;
+            }
+
+            if (_levelPortalView != null && _levelPortalView.IsOpen)
+            {
+                if (DemoInput.KeyDown(Key.Escape))
+                {
+                    _levelPortalView.SetOpen(false);
+                    RefreshCampLookCapture();
                 }
                 return;
             }
@@ -352,6 +366,11 @@ namespace ShatteredForge.SceneFlow
 
         private void SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind panel)
         {
+            if (panel != CampHubEconomyDraw.EconomyPanelKind.None && _levelPortalView != null && _levelPortalView.IsOpen)
+            {
+                _levelPortalView.SetOpen(false);
+            }
+
             if (panel != CampHubEconomyDraw.EconomyPanelKind.None && _inventoryPanel != null && _inventoryPanel.IsOpen)
             {
                 _inventoryPanel.SetOpen(false);
@@ -405,29 +424,45 @@ namespace ShatteredForge.SceneFlow
                 return;
             }
 
-            var fromResources = Resources.Load<CampPauseMenuView>(CampPauseMenuView.DefaultViewResourcesPath);
+            var fromResources = Resources.Load<PauseMenuView>(PauseMenuView.DefaultViewResourcesPath);
+            if (fromResources == null)
+            {
+                fromResources = Resources.Load<PauseMenuView>(PauseMenuView.LegacyViewResourcesPath);
+            }
+
             if (fromResources != null)
             {
-                _pauseMenuView = Instantiate(fromResources, transform);
-                _pauseMenuView.name = "CampPauseMenuUi";
+                var view = Instantiate(fromResources, transform);
+                view.name = "CampPauseMenuUi";
+                _pauseMenuView = view;
             }
             else
             {
                 var holder = new GameObject("CampPauseMenuUi");
                 holder.transform.SetParent(transform, false);
-                _pauseMenuView = holder.AddComponent<CampPauseMenuView>();
+                _pauseMenuView = holder.AddComponent<PauseMenuView>();
             }
 
             _pauseMenuView.EnsureBuilt();
+            _pauseMenuView.Configure(new PauseMenuConfig
+            {
+                continueLabel = "Продолжить",
+                settingsLabel = "Настройки",
+                exitLabel = "В меню",
+                showSettingsButton = true,
+                showExitButton = true
+            });
             _pauseMenuView.SetOpen(false);
-            _pauseMenuView.Bind(
-                onContinue: () => SetPauseMenuOpen(false),
-                onOpenSettings: OpenPauseSettings,
-                onExitToMainMenu: TryExitToMainMenu,
-                onVolumeChanged: ApplyMasterVolume,
-                onToggleFullscreen: ToggleFullscreen,
-                onNextResolution: CycleResolution,
-                onBackFromSettings: BackFromPauseSettings);
+            _pauseMenuView.Bind(new PauseMenuBinding
+            {
+                onContinue = () => SetPauseMenuOpen(false),
+                onOpenSettings = OpenPauseSettings,
+                onExit = TryExitToMainMenu,
+                onVolumeChanged = ApplyMasterVolume,
+                onToggleFullscreen = ToggleFullscreen,
+                onNextResolution = CycleResolution,
+                onBackFromSettings = BackFromPauseSettings
+            });
         }
 
         private void OpenPauseSettings()
@@ -486,6 +521,57 @@ namespace ShatteredForge.SceneFlow
             {
                 _pauseMenuView.ShowSettingsPage(_masterVolume, _fullscreen, GetResolutionLabel(_resolutionIndex));
             }
+        }
+
+        private void EnsureLevelPortalView()
+        {
+            if (_levelPortalView != null)
+            {
+                return;
+            }
+
+            _levelPortalView = GetComponent<CampLevelPortalView>();
+            if (_levelPortalView == null)
+            {
+                _levelPortalView = gameObject.AddComponent<CampLevelPortalView>();
+            }
+
+            _levelPortalView.Configure(
+                onSelectLevel: StartSelectedLevel,
+                onQuickPlay: StartQuickPlayLevel,
+                onStartProceduralFallback: EnterDungeon);
+            _levelPortalView.SetOpen(false);
+        }
+
+        private void StartSelectedLevel(string levelId)
+        {
+            if (SceneNavigation.IsBusy || string.IsNullOrWhiteSpace(levelId))
+            {
+                return;
+            }
+
+            PersistAccountIfNeeded();
+            PendingLevelRequest.SetSelected(levelId);
+            MenuSessionWriter.ClearResumeIntent();
+            MenuSessionWriter.SetPendingDungeonEntry(false);
+            SceneNavigation.GoTo(SceneNames.LevelScene);
+        }
+
+        private void StartQuickPlayLevel(LevelTierDefinition tier)
+        {
+            if (tier == null || _levelPortalView == null || _levelPortalView.Catalog == null)
+            {
+                return;
+            }
+
+            var pick = _levelPortalView.Catalog.PickRandom(tier, UnityEngine.Random.Range(1, int.MaxValue));
+            if (pick == null || string.IsNullOrWhiteSpace(pick.levelId))
+            {
+                _status = $"Нет уровней для тира '{tier.displayName}'.";
+                return;
+            }
+
+            StartSelectedLevel(pick.levelId);
         }
 
         private void TryExitToMainMenu()
@@ -590,6 +676,13 @@ namespace ShatteredForge.SceneFlow
                 return;
             }
 
+            if (_levelPortalView != null && _levelPortalView.IsOpen)
+            {
+                _levelPortalView.SetOpen(false);
+                RefreshCampLookCapture();
+                return;
+            }
+
             switch (_near)
             {
                 case NearKind.Shop:
@@ -602,7 +695,8 @@ namespace ShatteredForge.SceneFlow
                     SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind.Alchemy);
                     break;
                 case NearKind.Dungeon:
-                    EnterDungeon();
+                    _levelPortalView?.SetOpen(true);
+                    RefreshCampLookCapture();
                     break;
             }
         }

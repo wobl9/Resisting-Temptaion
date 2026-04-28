@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace ShatteredForge.UI
 {
     [DefaultExecutionOrder(15)]
-    public sealed class CampPauseMenuView : MonoBehaviour
+    public class CampPauseMenuView : MonoBehaviour, IPauseMenuView
     {
         public const string DefaultViewResourcesPath = "UI/CampPauseMenuUi";
 
@@ -81,14 +81,71 @@ namespace ShatteredForge.UI
             Action onNextResolution,
             Action onBackFromSettings)
         {
-            _onContinue = onContinue;
-            _onOpenSettings = onOpenSettings;
-            _onExitToMainMenu = onExitToMainMenu;
-            _onVolumeChanged = onVolumeChanged;
-            _onToggleFullscreen = onToggleFullscreen;
-            _onNextResolution = onNextResolution;
-            _onBackFromSettings = onBackFromSettings;
+            Bind(new PauseMenuBinding
+            {
+                onContinue = onContinue,
+                onOpenSettings = onOpenSettings,
+                onExit = onExitToMainMenu,
+                onVolumeChanged = onVolumeChanged,
+                onToggleFullscreen = onToggleFullscreen,
+                onNextResolution = onNextResolution,
+                onBackFromSettings = onBackFromSettings
+            });
+        }
+
+        public void Bind(PauseMenuBinding binding)
+        {
+            _onContinue = binding?.onContinue;
+            _onOpenSettings = binding?.onOpenSettings;
+            _onExitToMainMenu = binding?.onExit;
+            _onVolumeChanged = binding?.onVolumeChanged;
+            _onToggleFullscreen = binding?.onToggleFullscreen;
+            _onNextResolution = binding?.onNextResolution;
+            _onBackFromSettings = binding?.onBackFromSettings;
             WireEvents();
+        }
+
+        public void Configure(PauseMenuConfig config)
+        {
+            if (config == null)
+            {
+                return;
+            }
+
+            if (continueButton != null && !string.IsNullOrWhiteSpace(config.continueLabel))
+            {
+                var text = continueButton.GetComponentInChildren<Text>(true);
+                if (text != null)
+                {
+                    text.text = config.continueLabel;
+                }
+            }
+
+            if (settingsButton != null)
+            {
+                settingsButton.gameObject.SetActive(config.showSettingsButton);
+                if (!string.IsNullOrWhiteSpace(config.settingsLabel))
+                {
+                    var text = settingsButton.GetComponentInChildren<Text>(true);
+                    if (text != null)
+                    {
+                        text.text = config.settingsLabel;
+                    }
+                }
+            }
+
+            if (exitToMainMenuButton != null)
+            {
+                exitToMainMenuButton.gameObject.SetActive(config.showExitButton);
+                if (!string.IsNullOrWhiteSpace(config.exitLabel))
+                {
+                    var text = exitToMainMenuButton.GetComponentInChildren<Text>(true);
+                    if (text != null)
+                    {
+                        text.text = config.exitLabel;
+                    }
+                }
+            }
         }
 
         public void SetOpen(bool open)

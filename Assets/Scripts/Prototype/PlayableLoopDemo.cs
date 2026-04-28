@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 namespace ShatteredForge.Prototype
 {
     [RequireComponent(typeof(CombatRoomBootstrap))]
-    public class PlayableLoopDemo : MonoBehaviour
+    public class PlayableLoopDemo : MonoBehaviour, ICombatRoomDriver
     {
         private enum DemoState
         {
@@ -90,6 +90,7 @@ namespace ShatteredForge.Prototype
             {
                 combatBootstrap = gameObject.AddComponent<CombatRoomBootstrap>();
             }
+            combatBootstrap.BindDriver(this);
 
             _profileId = PlayerPrefs.GetString(MenuSessionPrefs.ActiveProfileIdKey, string.Empty);
             var resumeExpedition = PlayerPrefs.GetInt(MenuSessionPrefs.ResumeExpeditionKey, 0) == 1;

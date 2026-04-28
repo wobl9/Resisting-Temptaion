@@ -63,5 +63,9 @@ namespace ShatteredForge.Menu
 
         // Full serialized RunState for expedition resume fidelity.
         public string expeditionRunJson = string.Empty;
+
+        // Mission-level mode progression (separate from expedition fields above).
+        public string lastPlayedLevelId = string.Empty;
+        public List<string> clearedLevelIds = new();
     }
 }

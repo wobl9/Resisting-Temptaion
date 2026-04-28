@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4e3d2c1b0a9786958473625140f1e2d, type: 3}
+  m_Name: LootTable_DefaultBoss
+  m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.Items.LootTableDefinition
+  roomClearRows:
+  - templateId: weapon_simple_sword
+    weight: 2
+    minCount: 1
+    maxCount: 1
+    appliesToRoomTypes: 06000000
+  - templateId: armor_simple_chest
+    weight: 2
+    minCount: 1
+    maxCount: 1
+    appliesToRoomTypes: 06000000
+  enemyKillRows: []

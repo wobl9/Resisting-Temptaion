@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using ShatteredForge.Core;
 using ShatteredForge.Input;
-using ShatteredForge.Prototype;
 using ShatteredForge.Run;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,12 +8,11 @@ using UnityEngine.InputSystem;
 namespace ShatteredForge.Combat
 {
     /// <summary>
-    /// Spawns a simple arena, player, and enemies; notifies <see cref="PlayableLoopDemo"/> when a room is cleared or the player dies.
+    /// Spawns a simple arena, player, and enemies; notifies a room driver when room is cleared or player dies.
     /// </summary>
     /// ..
     public class CombatRoomBootstrap : MonoBehaviour
     {
-        [SerializeField] private PlayableLoopDemo loopDemo;
         [SerializeField] private Vector3 arenaSize = new(22f, 1f, 22f);
 
         [Header("Camera (original static view)")]
@@ -24,27 +22,53 @@ namespace ShatteredForge.Combat
 
         [Header("Flow")]
         [SerializeField] private bool autoAdvanceNonCombatRooms = true;
+        [Header("Arena override")]
+        [Tooltip("Optional custom arena root prefab. If set, default floor/walls are not spawned.")]
+        [SerializeField] private GameObject overrideArenaPrefab;
         [Header("Enemy stats")]
         [Tooltip("If null, loads Resources/Items/DefaultEnemyStatProfileCatalog.")]
         [SerializeField] private EnemyStatProfileCatalog enemyStatCatalog;
         [Header("Debug")]
         [SerializeField] private bool showEnemyDebugOverlay = true;
+        private ICombatRoomDriver _driver;
 
         private void Awake()
         {
-            if (loopDemo == null)
+            if (_driver == null)
             {
-                loopDemo = GetComponent<PlayableLoopDemo>();
+                _driver = GetComponent<ICombatRoomDriver>();
             }
 
-            if (loopDemo == null)
+            if (_driver == null)
             {
-                loopDemo = FindAnyObjectByType<PlayableLoopDemo>();
+                var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                for (var i = 0; i < behaviours.Length; i++)
+                {
+                    if (behaviours[i] is ICombatRoomDriver candidate)
+                    {
+                        _driver = candidate;
+                        break;
+                    }
+                }
             }
 
             if (enemyStatCatalog == null)
             {
                 enemyStatCatalog = Resources.Load<EnemyStatProfileCatalog>("Items/DefaultEnemyStatProfileCatalog");
+            }
+        }
+
+        public void BindDriver(ICombatRoomDriver driver)
+        {
+            _driver = driver;
+        }
+
+        public void SetArenaOverride(GameObject arenaPrefab)
+        {
+            overrideArenaPrefab = arenaPrefab;
+            if (_root != null)
+            {
+                ClearWorld();
             }
         }
 
@@ -57,13 +81,21 @@ namespace ShatteredForge.Combat
         private string _nonCombatHint = string.Empty;
         private bool _roomStarted;
         private bool _spawnedCombatEnemies;
+        private string _combatProfileId = "grunt";
+        private string _eliteProfileId = "elite";
+        private string _bossProfileId = "boss";
+        private int _regularEnemyCountOverride;
+        private float _healthMultiplier = 1f;
+        private float _damageMultiplier = 1f;
+        private float _moveSpeedMultiplier = 1f;
+        private float _attackSpeedMultiplier = 1f;
 
         public bool HasActiveCombatRoom => _spawnedCombatEnemies && _enemies.Count > 0;
         public bool WaitingForNonCombatConfirm => _nonCombatWaiting;
 
         private void LateUpdate()
         {
-            if (loopDemo == null || !loopDemo.IsInRun)
+            if (_driver == null || !_driver.IsInRun)
             {
                 ClearWorld();
                 return;
@@ -78,7 +110,7 @@ namespace ShatteredForge.Combat
             {
                 _nonCombatWaiting = false;
                 _roomStarted = false;
-                loopDemo.ApplyCurrentRoomClearedFromGameplay();
+                _driver.ApplyCurrentRoomClearedFromGameplay();
                 return;
             }
 
@@ -100,12 +132,12 @@ namespace ShatteredForge.Combat
 
             _spawnedCombatEnemies = false;
             _roomStarted = false;
-            loopDemo.ApplyCurrentRoomClearedFromGameplay();
+            _driver.ApplyCurrentRoomClearedFromGameplay();
         }
 
         public void OnRunStartedOrRoomAdvanced()
         {
-            if (loopDemo == null || !loopDemo.IsInRun)
+            if (_driver == null || !_driver.IsInRun)
             {
                 return;
             }
@@ -115,29 +147,30 @@ namespace ShatteredForge.Combat
             _spawnedCombatEnemies = false;
             _roomStarted = true;
 
-            if (!loopDemo.TryGetCurrentRoom(out var room))
+            if (!_driver.TryGetCurrentRoom(out var room))
             {
                 _roomStarted = false;
                 return;
             }
 
             EnsureWorld();
-            EnsurePlayer(loopDemo.CurrentRun);
+            EnsurePlayer(_driver.CurrentRun);
+            ApplySpawnConfigForRoom(room);
 
             switch (room)
             {
                 case RoomType.Combat:
                     _spawnedCombatEnemies = true;
-                    SpawnGrunts(4, 3f, 2.3f);
+                    SpawnGrunts(_regularEnemyCountOverride > 0 ? _regularEnemyCountOverride : 4, 3f, 2.3f, _combatProfileId);
                     break;
                 case RoomType.Elite:
                     _spawnedCombatEnemies = true;
-                    SpawnGrunts(2, 3f, 2.5f);
-                    SpawnElite(18f, 2f);
+                    SpawnGrunts(2, 3f, 2.5f, _combatProfileId);
+                    SpawnElite(18f, 2f, _eliteProfileId);
                     break;
                 case RoomType.Boss:
                     _spawnedCombatEnemies = true;
-                    SpawnBoss(32f, 1.35f);
+                    SpawnBoss(32f, 1.35f, _bossProfileId);
                     break;
                 case RoomType.Rest:
                     _nonCombatWaiting = true;
@@ -151,9 +184,36 @@ namespace ShatteredForge.Combat
                     break;
                 default:
                     _spawnedCombatEnemies = true;
-                    SpawnGrunts(3, 3f, 2.2f);
+                    SpawnGrunts(_regularEnemyCountOverride > 0 ? _regularEnemyCountOverride : 3, 3f, 2.2f, _combatProfileId);
                     break;
             }
+        }
+
+        private void ApplySpawnConfigForRoom(RoomType room)
+        {
+            _combatProfileId = "grunt";
+            _eliteProfileId = "elite";
+            _bossProfileId = "boss";
+            _regularEnemyCountOverride = 0;
+            _healthMultiplier = 1f;
+            _damageMultiplier = 1f;
+            _moveSpeedMultiplier = 1f;
+            _attackSpeedMultiplier = 1f;
+
+            if (_driver is not ICombatRoomSpawnConfigProvider provider ||
+                !provider.TryGetSpawnConfig(room, out var cfg))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(cfg.combatProfileId)) _combatProfileId = cfg.combatProfileId.Trim();
+            if (!string.IsNullOrWhiteSpace(cfg.eliteProfileId)) _eliteProfileId = cfg.eliteProfileId.Trim();
+            if (!string.IsNullOrWhiteSpace(cfg.bossProfileId)) _bossProfileId = cfg.bossProfileId.Trim();
+            _regularEnemyCountOverride = Mathf.Max(0, cfg.regularEnemyCountOverride);
+            _healthMultiplier = Mathf.Max(0.1f, cfg.healthMultiplier);
+            _damageMultiplier = Mathf.Max(0f, cfg.damageMultiplier);
+            _moveSpeedMultiplier = Mathf.Max(0.1f, cfg.moveSpeedMultiplier);
+            _attackSpeedMultiplier = Mathf.Max(0.1f, cfg.attackSpeedMultiplier);
         }
 
         private void OnGUI()
@@ -233,18 +293,26 @@ namespace ShatteredForge.Combat
 
             ConfigureMainCameraForArena();
 
-            _floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            _floor.name = "Floor";
-            _floor.transform.SetParent(_root, false);
-            _floor.transform.localScale = arenaSize;
-            _floor.transform.localPosition = new Vector3(0f, -0.55f, 0f);
-            Object.Destroy(_floor.GetComponent<Collider>());
+            if (overrideArenaPrefab != null)
+            {
+                var custom = Instantiate(overrideArenaPrefab, _root);
+                custom.name = $"ArenaOverride_{overrideArenaPrefab.name}";
+            }
+            else
+            {
+                _floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                _floor.name = "Floor";
+                _floor.transform.SetParent(_root, false);
+                _floor.transform.localScale = arenaSize;
+                _floor.transform.localPosition = new Vector3(0f, -0.55f, 0f);
+                Object.Destroy(_floor.GetComponent<Collider>());
 
-            var wallT = arenaSize.x * 0.5f + 0.5f;
-            CreateWall("WallN", new Vector3(0f, 1f, wallT), new Vector3(arenaSize.x + 2f, 2f, 1f));
-            CreateWall("WallS", new Vector3(0f, 1f, -wallT), new Vector3(arenaSize.x + 2f, 2f, 1f));
-            CreateWall("WallE", new Vector3(wallT, 1f, 0f), new Vector3(1f, 2f, arenaSize.z + 2f));
-            CreateWall("WallW", new Vector3(-wallT, 1f, 0f), new Vector3(1f, 2f, arenaSize.z + 2f));
+                var wallT = arenaSize.x * 0.5f + 0.5f;
+                CreateWall("WallN", new Vector3(0f, 1f, wallT), new Vector3(arenaSize.x + 2f, 2f, 1f));
+                CreateWall("WallS", new Vector3(0f, 1f, -wallT), new Vector3(arenaSize.x + 2f, 2f, 1f));
+                CreateWall("WallE", new Vector3(wallT, 1f, 0f), new Vector3(1f, 2f, arenaSize.z + 2f));
+                CreateWall("WallW", new Vector3(-wallT, 1f, 0f), new Vector3(1f, 2f, arenaSize.z + 2f));
+            }
 
             BuildProjectileTemplate();
         }
@@ -311,8 +379,8 @@ namespace ShatteredForge.Combat
         {
             if (_player != null)
             {
-                _player.BindRun(run, () => loopDemo.ApplyPlayerDeathFromGameplay());
-                _player.BindStatsProvider(() => loopDemo != null ? loopDemo.CurrentComputedStats : null);
+                _player.BindRun(run, () => _driver?.ApplyPlayerDeathFromGameplay());
+                _player.BindStatsProvider(() => _driver != null ? _driver.CurrentComputedStats : null);
                 return;
             }
 
@@ -328,13 +396,13 @@ namespace ShatteredForge.Combat
 
             _player = body.AddComponent<SimplePlayerController>();
             _player.SetProjectileTemplate(_projectileTemplate);
-            _player.BindRun(run, () => loopDemo.ApplyPlayerDeathFromGameplay());
-            _player.BindStatsProvider(() => loopDemo != null ? loopDemo.CurrentComputedStats : null);
+            _player.BindRun(run, () => _driver?.ApplyPlayerDeathFromGameplay());
+            _player.BindStatsProvider(() => _driver != null ? _driver.CurrentComputedStats : null);
         }
 
-        private void SpawnGrunts(int count, float hp, float speed)
+        private void SpawnGrunts(int count, float hp, float speed, string enemyProfileId = "grunt")
         {
-            var profile = ResolveEnemyProfile("grunt", hp, speed);
+            var profile = ResolveEnemyProfile(string.IsNullOrWhiteSpace(enemyProfileId) ? "grunt" : enemyProfileId.Trim(), hp, speed);
             for (var i = 0; i < count; i++)
             {
                 var e = CreateEnemy($"Grunt_{i}", profile);
@@ -344,17 +412,17 @@ namespace ShatteredForge.Combat
             }
         }
 
-        private void SpawnElite(float hp, float speed)
+        private void SpawnElite(float hp, float speed, string enemyProfileId = "elite")
         {
-            var profile = ResolveEnemyProfile("elite", hp, speed);
+            var profile = ResolveEnemyProfile(string.IsNullOrWhiteSpace(enemyProfileId) ? "elite" : enemyProfileId.Trim(), hp, speed);
             var e = CreateEnemy("Elite", profile);
             e.transform.localScale = Vector3.one * 1.35f;
             e.transform.position = new Vector3(7f, 0f, 2f);
         }
 
-        private void SpawnBoss(float hp, float speed)
+        private void SpawnBoss(float hp, float speed, string enemyProfileId = "boss")
         {
-            var profile = ResolveEnemyProfile("boss", hp, speed);
+            var profile = ResolveEnemyProfile(string.IsNullOrWhiteSpace(enemyProfileId) ? "boss" : enemyProfileId.Trim(), hp, speed);
             var e = CreateEnemy("Boss", profile);
             e.transform.localScale = Vector3.one * 2.2f;
             e.transform.position = new Vector3(8f, 0f, 0f);
@@ -362,18 +430,29 @@ namespace ShatteredForge.Combat
 
         private EnemyStatProfileCatalog.Entry ResolveEnemyProfile(string id, float fallbackHp, float fallbackSpeed)
         {
+            var scaledFallbackHp = Mathf.Max(0.1f, fallbackHp * _healthMultiplier);
+            var scaledFallbackSpeed = Mathf.Max(0.1f, fallbackSpeed * _moveSpeedMultiplier);
             if (enemyStatCatalog != null && enemyStatCatalog.TryGet(id, out var entry) && entry != null)
             {
-                return entry;
+                return new EnemyStatProfileCatalog.Entry
+                {
+                    id = entry.id,
+                    health = Mathf.Max(0.1f, entry.health * _healthMultiplier),
+                    moveSpeed = Mathf.Max(0.1f, entry.moveSpeed * _moveSpeedMultiplier),
+                    contactDamage = Mathf.Max(0f, entry.contactDamage * _damageMultiplier),
+                    contactCooldown = Mathf.Max(0.05f, entry.contactCooldown / _attackSpeedMultiplier),
+                    primaryStats = entry.primaryStats,
+                    flatBonuses = entry.flatBonuses
+                };
             }
 
             return new EnemyStatProfileCatalog.Entry
             {
                 id = id,
-                health = fallbackHp,
-                moveSpeed = fallbackSpeed,
-                contactDamage = 0.06f,
-                contactCooldown = 0.9f,
+                health = scaledFallbackHp,
+                moveSpeed = scaledFallbackSpeed,
+                contactDamage = Mathf.Max(0f, 0.06f * _damageMultiplier),
+                contactCooldown = Mathf.Max(0.05f, 0.9f / _attackSpeedMultiplier),
                 primaryStats = CharacterPrimaryStats.CreateDefault(),
                 flatBonuses = new FlatStatBonuses()
             };
@@ -412,10 +491,10 @@ namespace ShatteredForge.Combat
                 profile.primaryStats,
                 profile.flatBonuses);
             enemy.SetTarget(_player.transform);
-            if (loopDemo != null)
+            if (_driver != null)
             {
                 var pid = profile.id;
-                enemy.ConfigureKillLootReporter(p => loopDemo.NotifyEnemyKillLoot(p), pid);
+                enemy.ConfigureKillLootReporter(p => _driver.NotifyEnemyKillLoot(p), pid);
             }
 
             _enemies.Add(enemy);

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b2c1847df6f00547bfc1cd669cfe7a2, type: 3}
+  m_Name: EmberMines_Easy
+  m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.Levels.LevelDefinition
+  levelId: level_ember_easy
+  displayName: Ember Mines - Easy
+  biome: Ember Mines
+  tier: {fileID: 11400000, guid: a054940972a0b394e9acb2712168e97f, type: 2}
+  description: 
+  recommendedPower: 10
+  minRooms: 3
+  maxRooms: 5
+  regularEnemiesPerRoom: 4
+  eliteRoomCount: 0
+  regularPool: {fileID: 11400000, guid: e9e2a799f11f29441870682a7be132af, type: 2}
+  bossPool: {fileID: 11400000, guid: e9e2a799f11f29441870682a7be132af, type: 2}
+  requiredTags:
+  - ember_mines
+  guaranteedDropTemplateIds:
+  - weapon_simple_sword
+  randomLootTable: {fileID: 11400000, guid: 45c0569d2b0f01e46b00658e5f8bed21, type: 2}
+  randomDropRolls: 2
+  customArenaPrefab: {fileID: 0}
+  modifierIdsReserved: []

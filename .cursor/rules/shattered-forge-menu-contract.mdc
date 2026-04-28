@@ -20,7 +20,8 @@ alwaysApply: false
 
 ## Non-negotiables (do not regress)
 - First launch with no profiles: only `New Game`, `Settings`, `Quit Game` (no `Continue`).
-- `Continue` must be **hidden** unless an active expedition exists for the active profile (not disabled-in-place).
+- Active profile must be shown as a corner entry/button and open profile actions (switch/create).
+- `Continue` should eventually map to real expedition resume semantics; prototype fallback to scene reload/start is acceptable only if documented in `Menu_logic_contract.md`.
 - Never write stale `PlayerPrefs["sf.active_profile_id"]` after profile deletion; keep profile index + prefs consistent.
 
 ## QA hook

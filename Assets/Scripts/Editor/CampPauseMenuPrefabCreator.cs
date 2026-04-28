@@ -5,12 +5,14 @@ using UnityEngine;
 namespace ShatteredForge.EditorTools
 {
     /// <summary>
-    /// Bakes the default camp pause menu UI to <c>Assets/Resources/UI/CampPauseMenuUi.prefab</c>
+    /// Bakes the default pause menu UI to legacy and generic resource paths:
+    /// <c>Assets/Resources/UI/CampPauseMenuUi.prefab</c> and <c>Assets/Resources/UI/PauseMenuUi.prefab</c>
     /// for runtime loading via <see cref="Resources"/>.
     /// </summary>
     public static class CampPauseMenuPrefabCreator
     {
-        private const string PrefabPath = "Assets/Resources/UI/CampPauseMenuUi.prefab";
+        private const string LegacyPrefabPath = "Assets/Resources/UI/CampPauseMenuUi.prefab";
+        private const string GenericPrefabPath = "Assets/Resources/UI/PauseMenuUi.prefab";
 
         [MenuItem("ShatteredForge/UI/Bake Camp Pause Menu UI Prefab", priority = 52)]
         public static void BakePrefab()
@@ -18,29 +20,37 @@ namespace ShatteredForge.EditorTools
             EnsureFolder("Assets/Resources");
             EnsureFolder("Assets/Resources/UI");
 
-            var root = new GameObject("CampPauseMenuUi");
+            var legacyRoot = new GameObject("CampPauseMenuUi");
+            var genericRoot = new GameObject("PauseMenuUi");
             try
             {
-                var view = root.AddComponent<CampPauseMenuView>();
-                view.EnsureBuilt();
-                view.SetOpen(true);
-                view.ShowMainPage();
+                var legacyView = legacyRoot.AddComponent<CampPauseMenuView>();
+                legacyView.EnsureBuilt();
+                legacyView.SetOpen(true);
+                legacyView.ShowMainPage();
 
-                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+                var genericView = genericRoot.AddComponent<PauseMenuView>();
+                genericView.EnsureBuilt();
+                genericView.SetOpen(true);
+                genericView.ShowMainPage();
+
+                PrefabUtility.SaveAsPrefabAsset(legacyRoot, LegacyPrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(genericRoot, GenericPrefabPath);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
-                var saved = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-                if (saved != null)
+                var savedGeneric = AssetDatabase.LoadAssetAtPath<GameObject>(GenericPrefabPath);
+                if (savedGeneric != null)
                 {
-                    EditorUtility.SetDirty(saved);
-                    EditorGUIUtility.PingObject(saved);
+                    EditorUtility.SetDirty(savedGeneric);
+                    EditorGUIUtility.PingObject(savedGeneric);
                 }
 
-                Debug.Log($"{nameof(CampPauseMenuPrefabCreator)}: saved {PrefabPath}");
+                Debug.Log($"{nameof(CampPauseMenuPrefabCreator)}: saved {LegacyPrefabPath} and {GenericPrefabPath}");
             }
             finally
             {
-                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(legacyRoot);
+                Object.DestroyImmediate(genericRoot);
             }
         }
 
