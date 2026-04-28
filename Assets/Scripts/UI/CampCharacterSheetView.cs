@@ -15,6 +15,7 @@ namespace ShatteredForge.UI
         public EquipmentBodySlot bodySlot;
         public Button button;
         public Text glyphText;
+        public Image itemIcon;
         public Text labelText;
         public CampCharacterSheetHoverTip hoverTip;
     }
@@ -69,6 +70,8 @@ namespace ShatteredForge.UI
 
         private bool _built;
         private string _equipTargetTemplateId;
+        private bool _equipTargetSlotActive;
+        private EquipmentBodySlot _equipTargetSlot = EquipmentBodySlot.None;
 
         public CampCharacterSheetLayoutAsset LayoutAsset
         {
@@ -294,6 +297,7 @@ namespace ShatteredForge.UI
                             bodySlot = slot,
                             button = slotTr.GetComponent<Button>(),
                             glyphText = slotTr.Find("Glyph")?.GetComponent<Text>(),
+                            itemIcon = slotTr.Find("ItemIcon")?.GetComponent<Image>(),
                             labelText = paperDoll.Find($"Lbl_{slot}")?.GetComponent<Text>(),
                             hoverTip = slotTr.GetComponent<CampCharacterSheetHoverTip>()
                         };
@@ -431,6 +435,22 @@ namespace ShatteredForge.UI
         public void SetEquipHighlightTemplate(string templateId)
         {
             _equipTargetTemplateId = templateId;
+            _equipTargetSlotActive = false;
+            _equipTargetSlot = EquipmentBodySlot.None;
+        }
+
+        public void SetEquipHighlightSlot(EquipmentBodySlot slot)
+        {
+            _equipTargetTemplateId = string.Empty;
+            _equipTargetSlotActive = slot != EquipmentBodySlot.None;
+            _equipTargetSlot = _equipTargetSlotActive ? slot : EquipmentBodySlot.None;
+        }
+
+        public void ClearEquipHighlight()
+        {
+            _equipTargetTemplateId = string.Empty;
+            _equipTargetSlotActive = false;
+            _equipTargetSlot = EquipmentBodySlot.None;
         }
 
         private bool IsUserHierarchyComplete()
@@ -563,9 +583,24 @@ namespace ShatteredForge.UI
                 }
 
                 var equipped = CharacterPaperDoll.GetEquipped(account, meta.slot);
+                var equippedIcon = ItemInventoryUi.GetIcon(equipped);
+                if (bind.itemIcon == null)
+                {
+                    bind.itemIcon = EnsureSlotItemIcon(bind.button);
+                }
+
+                var canShowIcon = bind.itemIcon != null && equippedIcon != null;
                 if (bind.glyphText != null)
                 {
                     bind.glyphText.text = equipped != null ? ItemInventoryUi.GetGlyph(equipped) : "—";
+                    bind.glyphText.gameObject.SetActive(!canShowIcon);
+                }
+
+                if (bind.itemIcon != null)
+                {
+                    bind.itemIcon.gameObject.SetActive(canShowIcon);
+                    bind.itemIcon.sprite = equippedIcon;
+                    bind.itemIcon.color = Color.white;
                 }
 
                 if (bind.labelText != null)
@@ -582,8 +617,10 @@ namespace ShatteredForge.UI
                 }
 
                 var img = bind.button.targetGraphic as Graphic;
-                var canWearHere = !string.IsNullOrEmpty(_equipTargetTemplateId) &&
-                                  CampItemSlotRules.CanWearInBodySlot(_equipTargetTemplateId, meta.slot);
+                var canWearHere = _equipTargetSlotActive
+                    ? meta.slot == _equipTargetSlot
+                    : !string.IsNullOrEmpty(_equipTargetTemplateId) &&
+                      CampItemSlotRules.CanWearInBodySlot(_equipTargetTemplateId, meta.slot);
                 if (img != null)
                 {
                     img.color = canWearHere
@@ -639,6 +676,34 @@ namespace ShatteredForge.UI
             outline.enabled = active;
         }
 
+        private static Image EnsureSlotItemIcon(Button button)
+        {
+            if (button == null)
+            {
+                return null;
+            }
+
+            var root = button.transform;
+            var existing = root.Find("ItemIcon")?.GetComponent<Image>();
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var iconGo = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image));
+            iconGo.transform.SetParent(root, false);
+            var iconRt = iconGo.GetComponent<RectTransform>();
+            iconRt.anchorMin = Vector2.zero;
+            iconRt.anchorMax = Vector2.one;
+            iconRt.offsetMin = new Vector2(6f, 6f);
+            iconRt.offsetMax = new Vector2(-6f, -6f);
+            var icon = iconGo.GetComponent<Image>();
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            icon.gameObject.SetActive(false);
+            return icon;
+        }
+
         private void EnsureStashPool()
         {
             if (stashGrid == null || stashCellPrefab == null)
@@ -683,17 +748,19 @@ namespace ShatteredForge.UI
                 if (i < count && HasRealItem(stash[i]))
                 {
                     var it = stash[i];
+                    var selected = i == selectedStashIndex || IsEquipHighlightCandidate(it);
                     cell.Apply(
                         i,
                         true,
-                        i == selectedStashIndex,
+                        selected,
                         ItemInventoryUi.GetGlyph(it),
+                        ItemInventoryUi.GetIcon(it),
                         ItemInventoryUi.BuildTooltip(it),
                         tooltipHost);
                 }
                 else
                 {
-                    cell.Apply(i, false, false, string.Empty, string.Empty, tooltipHost);
+                    cell.Apply(i, false, false, string.Empty, null, string.Empty, tooltipHost);
                 }
             }
 
@@ -717,8 +784,8 @@ namespace ShatteredForge.UI
             sb.AppendLine($"Интеллект: {primary.intellect}");
             sb.AppendLine();
             sb.AppendLine("<b>Бой</b>");
-            sb.AppendLine($"Урон: {computed.damage}");
-            sb.AppendLine($"Броня: {computed.armor}");
+            sb.AppendLine($"Урон: {computed.damage:0.##}");
+            sb.AppendLine($"Броня: {computed.armor:0.##}");
             sb.AppendLine($"Скорость атаки: {computed.attackSpeed:0.00}");
             sb.AppendLine($"Шанс критического удара: {computed.critChance * 100f:0.#}%");
             sb.AppendLine($"Мана: {computed.mana}");
@@ -741,6 +808,32 @@ namespace ShatteredForge.UI
         private static bool HasRealItem(ItemInstance item)
         {
             return item != null && !string.IsNullOrWhiteSpace(item.templateId);
+        }
+
+        private bool IsEquipHighlightCandidate(ItemInstance item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.templateId))
+            {
+                return false;
+            }
+
+            if (_equipTargetSlotActive)
+            {
+                return CampItemSlotRules.CanWearInBodySlot(item.templateId, _equipTargetSlot);
+            }
+
+            if (!string.IsNullOrEmpty(_equipTargetTemplateId))
+            {
+                var targetKind = InventoryEquipmentRules.Classify(_equipTargetTemplateId);
+                if (targetKind == ItemEquipmentKind.None)
+                {
+                    return false;
+                }
+
+                return InventoryEquipmentRules.Classify(item.templateId) == targetKind;
+            }
+
+            return false;
         }
 
         private static void EnsureUiEventSystemExists()
@@ -1053,7 +1146,7 @@ namespace ShatteredForge.UI
                 labelRt.anchorMin = labelRt.anchorMax = new Vector2(0f, 1f);
                 labelRt.pivot = new Vector2(0f, 0f);
 
-                var (btnGo, btn, glyph) = CreateSlotButton(dollBlock.transform, anchor, sz);
+                var (btnGo, btn, glyph, itemIcon) = CreateSlotButton(dollBlock.transform, anchor, sz);
                 btnGo.name = $"Slot_{slot}";
                 if (slotLayout != null && slotLayout.iconSprite != null)
                 {
@@ -1068,6 +1161,7 @@ namespace ShatteredForge.UI
 
                 bind.button = btn;
                 bind.glyphText = glyph;
+                bind.itemIcon = itemIcon;
                 bind.hoverTip = btnGo.AddComponent<CampCharacterSheetHoverTip>();
                 dollSlots[i] = bind;
             }
@@ -1244,7 +1338,7 @@ namespace ShatteredForge.UI
             return tx;
         }
 
-        private static (GameObject go, Button btn, Text glyph) CreateSlotButton(Transform parent, Vector2 pos, Vector2 size)
+        private static (GameObject go, Button btn, Text glyph, Image itemIcon) CreateSlotButton(Transform parent, Vector2 pos, Vector2 size)
         {
             var go = new GameObject("SlotButton", typeof(RectTransform), typeof(Image), typeof(Button));
             var rt = go.GetComponent<RectTransform>();
@@ -1271,7 +1365,19 @@ namespace ShatteredForge.UI
             grt.anchorMax = Vector2.one;
             grt.offsetMin = Vector2.zero;
             grt.offsetMax = Vector2.zero;
-            return (go, btn, glyph);
+
+            var iconGo = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image));
+            iconGo.transform.SetParent(go.transform, false);
+            var iconRt = iconGo.GetComponent<RectTransform>();
+            iconRt.anchorMin = Vector2.zero;
+            iconRt.anchorMax = Vector2.one;
+            iconRt.offsetMin = new Vector2(6f, 6f);
+            iconRt.offsetMax = new Vector2(-6f, -6f);
+            var itemIcon = iconGo.GetComponent<Image>();
+            itemIcon.preserveAspect = true;
+            itemIcon.raycastTarget = false;
+            itemIcon.gameObject.SetActive(false);
+            return (go, btn, glyph, itemIcon);
         }
 
         private static CampCharacterSheetStashCellUi CreateStashCellTemplate(Transform holder, Vector2 cellSize)
@@ -1292,9 +1398,20 @@ namespace ShatteredForge.UI
             gr.anchorMin = Vector2.zero;
             gr.anchorMax = Vector2.one;
             gr.offsetMin = gr.offsetMax = Vector2.zero;
+            var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            iconGo.transform.SetParent(root.transform, false);
+            var iconRt = iconGo.GetComponent<RectTransform>();
+            iconRt.anchorMin = Vector2.zero;
+            iconRt.anchorMax = Vector2.one;
+            iconRt.offsetMin = new Vector2(6f, 6f);
+            iconRt.offsetMax = new Vector2(-6f, -6f);
+            var icon = iconGo.GetComponent<Image>();
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            iconGo.SetActive(false);
             var hoverTip = root.AddComponent<CampCharacterSheetHoverTip>();
             var cell = root.AddComponent<CampCharacterSheetStashCellUi>();
-            cell.AssignRuntimeRefs(btn, glyph, bg, hoverTip);
+            cell.AssignRuntimeRefs(btn, glyph, icon, bg, hoverTip);
             root.SetActive(false);
             root.transform.SetParent(holder, false);
             return cell;

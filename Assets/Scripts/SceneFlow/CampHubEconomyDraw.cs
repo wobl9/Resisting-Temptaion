@@ -107,13 +107,7 @@ namespace ShatteredForge.SceneFlow
                 if (GUILayout.Button("Купить", GUILayout.Width(90f)))
                 {
                     account.gold -= price;
-                    account.stash.Add(new ItemInstance
-                    {
-                        id = Guid.NewGuid().ToString(),
-                        templateId = tid,
-                        rarity = "Обычная",
-                        enhanceLevel = 0
-                    });
+                    account.stash.Add(ItemInstanceFactory.Create(tid));
                     CharacterStatsService.RecalculateForCamp(account);
                     onMutatedPersist?.Invoke();
                 }

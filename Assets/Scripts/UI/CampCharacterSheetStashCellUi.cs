@@ -10,14 +10,16 @@ namespace ShatteredForge.UI
     {
         [SerializeField] private Button button;
         [SerializeField] private Text glyph;
+        [SerializeField] private Image icon;
         [SerializeField] private Graphic background;
         [SerializeField] private CampCharacterSheetHoverTip hover;
 
         /// <summary>Runtime bootstrap assigns refs (prefab is built in code).</summary>
-        public void AssignRuntimeRefs(Button b, Text g, Graphic bg, CampCharacterSheetHoverTip h)
+        public void AssignRuntimeRefs(Button b, Text g, Image i, Graphic bg, CampCharacterSheetHoverTip h)
         {
             button = b;
             glyph = g;
+            icon = i;
             background = bg;
             hover = h;
         }
@@ -71,6 +73,29 @@ namespace ShatteredForge.UI
                 }
             }
 
+            if (icon == null)
+            {
+                var iconTr = transform.Find("Icon");
+                if (iconTr != null)
+                {
+                    icon = iconTr.GetComponent<Image>();
+                }
+
+                if (icon == null)
+                {
+                    var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+                    iconGo.transform.SetParent(transform, false);
+                    var rt = iconGo.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(0f, 0f);
+                    rt.anchorMax = new Vector2(1f, 1f);
+                    rt.offsetMin = new Vector2(6f, 6f);
+                    rt.offsetMax = new Vector2(-6f, -6f);
+                    icon = iconGo.GetComponent<Image>();
+                    icon.preserveAspect = true;
+                    icon.raycastTarget = false;
+                }
+            }
+
             if (hover == null)
             {
                 hover = GetComponent<CampCharacterSheetHoverTip>();
@@ -109,6 +134,7 @@ namespace ShatteredForge.UI
             bool used,
             bool selected,
             string glyphText,
+            Sprite iconSprite,
             string tip,
             CampCharacterSheetTooltipHost tooltipHost)
         {
@@ -124,8 +150,16 @@ namespace ShatteredForge.UI
 
             if (glyph != null)
             {
-                glyph.gameObject.SetActive(used);
+                glyph.gameObject.SetActive(used && iconSprite == null);
                 glyph.text = glyphText ?? string.Empty;
+            }
+
+            if (icon != null)
+            {
+                icon.gameObject.SetActive(used && iconSprite != null);
+                icon.sprite = iconSprite;
+                icon.color = Color.white;
+                icon.type = Image.Type.Simple;
             }
 
             if (background != null)

@@ -213,7 +213,7 @@ namespace ShatteredForge.Combat
                     _ => new Color(1f, 0.45f, 0.45f)
                 };
 
-                var label = $"HP {enemy.CurrentHealth:0.0}/{enemy.MaxHealth:0.0}  DMG {dmg}  ARM {arm}  ASPD {atkSpd:0.00}  CRIT {crit:0.#}%";
+                var label = $"HP {enemy.CurrentHealth:0.0}/{enemy.MaxHealth:0.0}  DMG {dmg:0.##}  ARM {arm:0.##}  ASPD {atkSpd:0.00}  CRIT {crit:0.#}%";
                 GUI.Label(new Rect(x - 30f, y - 10f, 420f, 24f), label);
                 var line2 = $"MANA {mana}  M.PWR {magicPower}  RES F/C/L {fire}/{cold}/{lightning}";
                 GUI.Label(new Rect(x - 30f, y + 8f, 420f, 24f), line2);

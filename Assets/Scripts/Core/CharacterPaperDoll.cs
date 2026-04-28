@@ -92,7 +92,7 @@ namespace ShatteredForge.Core
                     continue;
                 }
 
-                account.stash.Add(row.item);
+                PutIntoFirstFreeStashSlot(account.stash, row.item);
                 account.characterPaperDoll.RemoveAt(i);
                 CharacterStatsService.RecalculateForCamp(account);
                 return true;
@@ -120,7 +120,8 @@ namespace ShatteredForge.Core
                 return false;
             }
 
-            account.stash.RemoveAt(stashIndex);
+            account.stash[stashIndex] = CreateEmptyStashSlot();
+
             var key = SlotKey(slot);
             for (var i = 0; i < account.characterPaperDoll.Count; i++)
             {
@@ -132,7 +133,7 @@ namespace ShatteredForge.Core
 
                 if (row.item != null && !string.IsNullOrEmpty(row.item.templateId))
                 {
-                    account.stash.Add(row.item);
+                    PutIntoFirstFreeStashSlot(account.stash, row.item);
                 }
 
                 row.item = item;
@@ -141,6 +142,57 @@ namespace ShatteredForge.Core
             }
 
             account.characterPaperDoll.Add(new CharacterPaperDollRow { slotId = key, item = item });
+            CharacterStatsService.RecalculateForCamp(account);
+            return true;
+        }
+
+        public static bool TryMoveOrSwapEquippedToStashCell(AccountState account, EquipmentBodySlot slot, int targetStashIndex)
+        {
+            EnsureList(account);
+            if (account?.stash == null || targetStashIndex < 0)
+            {
+                return false;
+            }
+
+            var key = SlotKey(slot);
+            var rowIndex = -1;
+            for (var i = 0; i < account.characterPaperDoll.Count; i++)
+            {
+                var row = account.characterPaperDoll[i];
+                if (row == null || row.slotId != key || row.item == null || string.IsNullOrWhiteSpace(row.item.templateId))
+                {
+                    continue;
+                }
+
+                rowIndex = i;
+                break;
+            }
+
+            if (rowIndex < 0)
+            {
+                return false;
+            }
+
+            EnsureStashCapacity(account.stash, targetStashIndex);
+            var equipped = account.characterPaperDoll[rowIndex].item;
+            var target = account.stash[targetStashIndex];
+            var hasTargetItem = target != null && !string.IsNullOrWhiteSpace(target.templateId);
+
+            if (!hasTargetItem)
+            {
+                account.stash[targetStashIndex] = equipped;
+                account.characterPaperDoll.RemoveAt(rowIndex);
+                CharacterStatsService.RecalculateForCamp(account);
+                return true;
+            }
+
+            if (!CampItemSlotRules.CanWearInBodySlot(target.templateId, slot))
+            {
+                return false;
+            }
+
+            account.stash[targetStashIndex] = equipped;
+            account.characterPaperDoll[rowIndex].item = target;
             CharacterStatsService.RecalculateForCamp(account);
             return true;
         }
@@ -169,5 +221,52 @@ namespace ShatteredForge.Core
         {
             return slot.ToString();
         }
+
+        private static void PutIntoFirstFreeStashSlot(List<ItemInstance> stash, ItemInstance item)
+        {
+            if (stash == null || item == null || string.IsNullOrWhiteSpace(item.templateId))
+            {
+                return;
+            }
+
+            for (var i = 0; i < stash.Count; i++)
+            {
+                var slot = stash[i];
+                if (slot == null || string.IsNullOrWhiteSpace(slot.templateId))
+                {
+                    stash[i] = item;
+                    return;
+                }
+            }
+
+            stash.Add(item);
+        }
+
+        private static void EnsureStashCapacity(List<ItemInstance> stash, int targetIndex)
+        {
+            if (stash == null)
+            {
+                return;
+            }
+
+            while (stash.Count <= targetIndex)
+            {
+                stash.Add(CreateEmptyStashSlot());
+            }
+        }
+
+        private static ItemInstance CreateEmptyStashSlot()
+        {
+            return new ItemInstance
+            {
+                id = string.Empty,
+                templateId = string.Empty,
+                rarity = string.Empty,
+                enhanceLevel = 0,
+                baseDamage = 0f,
+                baseArmor = 0f
+            };
+        }
+
     }
 }

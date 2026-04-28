@@ -155,13 +155,9 @@ namespace ShatteredForge.Items
 
         private static ItemInstance CreateLootInstance(string templateId, RoomType roomType)
         {
-            return new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = templateId,
-                rarity = roomType == RoomType.Boss ? "Редкая" : roomType == RoomType.Elite ? "Необычная" : "Обычная",
-                enhanceLevel = 0
-            };
+            return ItemInstanceFactory.Create(
+                templateId,
+                roomType == RoomType.Boss ? "Редкая" : roomType == RoomType.Elite ? "Необычная" : "Обычная");
         }
 
         private static int MixSeed(int runSeed, int a, int salt)

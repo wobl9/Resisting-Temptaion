@@ -461,13 +461,10 @@ namespace ShatteredForge.Prototype
             var seed = BuildInitialAccount();
             foreach (var item in seed.stash)
             {
-                account.stash.Add(new ItemInstance
-                {
-                    id = Guid.NewGuid().ToString(),
-                    templateId = item.templateId,
-                    rarity = item.rarity,
-                    enhanceLevel = item.enhanceLevel
-                });
+                account.stash.Add(ItemInstanceFactory.Create(
+                    item.templateId,
+                    item.rarity,
+                    item.enhanceLevel));
             }
         }
 
@@ -483,20 +480,8 @@ namespace ShatteredForge.Prototype
                 primaryStats = CharacterPrimaryStats.CreateDefault()
             };
 
-            account.stash.Add(new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = "weapon_simple_sword",
-                rarity = "Обычная",
-                enhanceLevel = 0
-            });
-            account.stash.Add(new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = "armor_simple_chest",
-                rarity = "Обычная",
-                enhanceLevel = 0
-            });
+            account.stash.Add(ItemInstanceFactory.Create("weapon_simple_sword"));
+            account.stash.Add(ItemInstanceFactory.Create("armor_simple_chest"));
 
             AccountEconomy.AppendStarterCraftMaterials(account);
             return account;
@@ -504,13 +489,9 @@ namespace ShatteredForge.Prototype
 
         private static ItemInstance GenerateLootForRoom(RoomType roomType)
         {
-            return new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = $"loot_{roomType.ToString().ToLowerInvariant()}",
-                rarity = roomType == RoomType.Boss ? "Epic" : "Magic",
-                enhanceLevel = 0
-            };
+            return ItemInstanceFactory.Create(
+                $"loot_{roomType.ToString().ToLowerInvariant()}",
+                roomType == RoomType.Boss ? "Epic" : "Magic");
         }
 
         private static AccountState LoadOrCreateAccount(ProfileData profile)

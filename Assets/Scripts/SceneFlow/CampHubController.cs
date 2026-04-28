@@ -662,20 +662,8 @@ namespace ShatteredForge.SceneFlow
                 primaryStats = CharacterPrimaryStats.CreateDefault()
             };
 
-            account.stash.Add(new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = "weapon_simple_sword",
-                rarity = "Обычная",
-                enhanceLevel = 0
-            });
-            account.stash.Add(new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = "armor_simple_chest",
-                rarity = "Обычная",
-                enhanceLevel = 0
-            });
+            account.stash.Add(ItemInstanceFactory.Create("weapon_simple_sword"));
+            account.stash.Add(ItemInstanceFactory.Create("armor_simple_chest"));
 
             AccountEconomy.AppendStarterCraftMaterials(account);
             return account;

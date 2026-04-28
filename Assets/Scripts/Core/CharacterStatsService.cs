@@ -71,8 +71,8 @@ namespace ShatteredForge.Core
             var totalVitality = safeBase.vitality;
             var totalIntellect = safeBase.intellect;
 
-            var bonusDamage = 0;
-            var bonusArmor = 0;
+            var bonusDamage = 0f;
+            var bonusArmor = 0f;
             var bonusFire = 0;
             var bonusCold = 0;
             var bonusLightning = 0;
@@ -82,7 +82,7 @@ namespace ShatteredForge.Core
             var bonusMagicPower = 0;
 
             var bonusCatalog = ItemStatBonusCatalogRuntime.Current;
-            if (equippedItems != null && bonusCatalog != null)
+            if (equippedItems != null)
             {
                 for (var i = 0; i < equippedItems.Count; i++)
                 {
@@ -92,7 +92,20 @@ namespace ShatteredForge.Core
                         continue;
                     }
 
-                    if (!bonusCatalog.TryGet(item.templateId, out var bonus))
+                    var intrinsicDamage = item.baseDamage;
+                    var intrinsicArmor = item.baseArmor;
+                    if ((intrinsicDamage <= 0f && intrinsicArmor <= 0f) && ItemCatalogRuntime.Current != null)
+                    {
+                        // Old saves may miss rolled values; resolve from catalog defaults at runtime.
+                        ItemCatalogRuntime.Current.ApplyBaseCombatStats(item, reroll: false);
+                        intrinsicDamage = item.baseDamage;
+                        intrinsicArmor = item.baseArmor;
+                    }
+
+                    bonusDamage += intrinsicDamage;
+                    bonusArmor += intrinsicArmor;
+
+                    if (bonusCatalog == null || !bonusCatalog.TryGet(item.templateId, out var bonus))
                     {
                         continue;
                     }
@@ -154,8 +167,8 @@ namespace ShatteredForge.Core
             int totalAgility,
             int totalVitality,
             int totalIntellect,
-            int bonusDamage,
-            int bonusArmor,
+            float bonusDamage,
+            float bonusArmor,
             int bonusFire,
             int bonusCold,
             int bonusLightning,

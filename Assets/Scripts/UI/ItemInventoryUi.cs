@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using ShatteredForge.Core;
 using ShatteredForge.Items;
@@ -14,6 +15,7 @@ namespace ShatteredForge.UI
         public const float DefaultCellSize = 36f;
         public const float CellGap = 2f;
         public const int DefaultStashColumns = 10;
+        private static readonly Dictionary<string, Sprite> IconCache = new();
 
         public static string GetDisplayName(ItemInstance it)
         {
@@ -70,10 +72,24 @@ namespace ShatteredForge.UI
                 return "Пусто";
             }
 
+            // Legacy items can miss rolled base combat fields in old saves.
+            // Resolve once from catalog defaults so tooltip and stat math stay in sync.
+            ItemCatalogRuntime.Current?.ApplyBaseCombatStats(it, reroll: false);
+
             var sb = new StringBuilder(256);
             sb.AppendLine(GetDisplayName(it));
             sb.AppendLine($"Шаблон: {it.templateId}");
             sb.AppendLine($"Редкость: {it.rarity}  Усиление: +{it.enhanceLevel}");
+            if (it.baseDamage > 0f)
+            {
+                sb.AppendLine($"Базовый урон: {it.baseDamage:0.##}");
+            }
+
+            if (it.baseArmor > 0f)
+            {
+                sb.AppendLine($"Базовая броня: {it.baseArmor:0.##}");
+            }
+
             var cat = ItemCatalogRuntime.Current;
             if (cat != null)
             {
@@ -107,6 +123,31 @@ namespace ShatteredForge.UI
             }
 
             return sb.ToString().TrimEnd();
+        }
+
+        public static Sprite GetIcon(ItemInstance it)
+        {
+            if (it == null || string.IsNullOrWhiteSpace(it.templateId))
+            {
+                return null;
+            }
+
+            var key = it.templateId.Trim();
+            if (IconCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var iconName = ResolveIconName(key);
+            if (string.IsNullOrEmpty(iconName))
+            {
+                IconCache[key] = null;
+                return null;
+            }
+
+            var sprite = LoadIconSprite(iconName);
+            IconCache[key] = sprite;
+            return sprite;
         }
 
         /// <summary>
@@ -298,6 +339,103 @@ namespace ShatteredForge.UI
             GUI.Box(new Rect(pos.x, pos.y, w, h), text, style);
             GUI.backgroundColor = prevBg;
             GUI.depth = prevDepth;
+        }
+
+        private static string ResolveIconName(string templateId)
+        {
+            var id = templateId.ToLowerInvariant();
+            if (id.Contains("sword") || id.Contains("weapon"))
+            {
+                return "sword";
+            }
+
+            if (id.Contains("axe"))
+            {
+                return "axe";
+            }
+
+            if (id.Contains("shield"))
+            {
+                return "shield";
+            }
+
+            if (id.Contains("armor") || id.Contains("chest"))
+            {
+                return "armor";
+            }
+
+            if (id.Contains("helm"))
+            {
+                return "helmets";
+            }
+
+            if (id.Contains("boots"))
+            {
+                return "boots";
+            }
+
+            if (id.Contains("gloves"))
+            {
+                return "gloves";
+            }
+
+            if (id.Contains("ring"))
+            {
+                return "rings";
+            }
+
+            if (id.Contains("amulet") || id.Contains("necklace"))
+            {
+                return "necklace";
+            }
+
+            if (id.Contains("belt"))
+            {
+                return "belts";
+            }
+
+            if (id.Contains("mat_") || id.Contains("bone") || id.Contains("dust") || id.Contains("ingot"))
+            {
+                return "ingots";
+            }
+
+            if (id.Contains("core") || id.Contains("gem"))
+            {
+                return "gem";
+            }
+
+            return null;
+        }
+
+        private static Sprite LoadIconSprite(string iconName)
+        {
+            var path = Path.Combine(Application.dataPath, "RPG_inventory_icons", iconName + ".png");
+            if (!File.Exists(path))
+            {
+                path = Path.Combine(Application.dataPath, "RPG_inventory_icons", iconName + ".PNG");
+            }
+
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            var bytes = File.ReadAllBytes(path);
+            if (bytes == null || bytes.Length == 0)
+            {
+                return null;
+            }
+
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (!tex.LoadImage(bytes))
+            {
+                Object.Destroy(tex);
+                return null;
+            }
+
+            tex.filterMode = FilterMode.Bilinear;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            return Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
         }
     }
 }

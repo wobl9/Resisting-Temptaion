@@ -45,6 +45,12 @@ namespace ShatteredForge.Items
             public int buyGoldPrice;
 
             public CatalogItemKind catalogKind = CatalogItemKind.Gear;
+
+            [Header("Base combat rolls")]
+            [Min(0f)] public float baseWeaponDamageMin = 1f;
+            [Min(0f)] public float baseWeaponDamageMax = 1f;
+            [Min(0f)] public float baseArmorMin = 1f;
+            [Min(0f)] public float baseArmorMax = 1f;
         }
 
         [SerializeField] private List<Entry> entries = new();
@@ -99,6 +105,96 @@ namespace ShatteredForge.Items
         public bool IsMaterial(string templateId)
         {
             return TryGet(templateId, out var e) && e.catalogKind == CatalogItemKind.Material;
+        }
+
+        public void ApplyBaseCombatStats(ItemInstance item, bool reroll = true)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.templateId))
+            {
+                return;
+            }
+
+            var kind = ResolveEquipKind(item.templateId);
+            if (kind == ItemEquipmentKind.Weapon)
+            {
+                if (reroll || item.baseDamage <= 0f)
+                {
+                    ResolveWeaponRollRange(item.templateId, out var min, out var max);
+                    item.baseDamage = UnityEngine.Random.Range(min, max);
+                }
+
+                item.baseArmor = 0f;
+                return;
+            }
+
+            if (kind == ItemEquipmentKind.Armor)
+            {
+                if (reroll || item.baseArmor <= 0f)
+                {
+                    ResolveArmorRollRange(item.templateId, out var min, out var max);
+                    item.baseArmor = UnityEngine.Random.Range(min, max);
+                }
+
+                item.baseDamage = 0f;
+                return;
+            }
+
+            item.baseDamage = 0f;
+            item.baseArmor = 0f;
+        }
+
+        public void ResolveWeaponRollRange(string templateId, out float min, out float max)
+        {
+            min = 1f;
+            max = 1f;
+            if (!TryGet(templateId, out var entry))
+            {
+                return;
+            }
+
+            min = Mathf.Max(0f, entry.baseWeaponDamageMin);
+            max = Mathf.Max(min, entry.baseWeaponDamageMax);
+            if (Mathf.Approximately(min, max))
+            {
+                max = min + 0.0001f;
+            }
+        }
+
+        public void ResolveArmorRollRange(string templateId, out float min, out float max)
+        {
+            min = 1f;
+            max = 1f;
+            if (!TryGet(templateId, out var entry))
+            {
+                return;
+            }
+
+            min = Mathf.Max(0f, entry.baseArmorMin);
+            max = Mathf.Max(min, entry.baseArmorMax);
+            if (Mathf.Approximately(min, max))
+            {
+                max = min + 0.0001f;
+            }
+        }
+
+        private ItemEquipmentKind ResolveEquipKind(string templateId)
+        {
+            if (TryGet(templateId, out var e) && e.equipKind != ItemEquipmentKind.None)
+            {
+                return e.equipKind;
+            }
+
+            if (templateId.StartsWith("weapon_", StringComparison.Ordinal))
+            {
+                return ItemEquipmentKind.Weapon;
+            }
+
+            if (templateId.StartsWith("armor_", StringComparison.Ordinal))
+            {
+                return ItemEquipmentKind.Armor;
+            }
+
+            return ItemEquipmentKind.None;
         }
     }
 

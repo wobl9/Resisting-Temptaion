@@ -175,13 +175,7 @@ namespace ShatteredForge.Items
 
             for (var i = 0; i < recipe.outputCount; i++)
             {
-                account.stash.Add(new ItemInstance
-                {
-                    id = Guid.NewGuid().ToString(),
-                    templateId = recipe.outputTemplateId.Trim(),
-                    rarity = "Обычная",
-                    enhanceLevel = 0
-                });
+                account.stash.Add(ItemInstanceFactory.Create(recipe.outputTemplateId.Trim()));
             }
 
             return true;

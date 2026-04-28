@@ -35,6 +35,8 @@ namespace ShatteredForge.UI
         private int _pageIndex;
         private bool _dragActive;
         private int _dragStashIndex = -1;
+        private bool _equippedTargetMode;
+        private EquipmentBodySlot _targetEquippedSlot = EquipmentBodySlot.None;
         private readonly Queue<string> _debugLines = new();
 
         public bool IsOpen => _open;
@@ -104,6 +106,7 @@ namespace ShatteredForge.UI
             if (!open)
             {
                 EndDrag(false);
+                CancelEquippedTargetMode(false);
                 _selectedStashIndex = -1;
                 _pageIndex = PageInventory;
                 Trace("close");
@@ -241,13 +244,18 @@ namespace ShatteredForge.UI
             var equipped = CharacterPaperDoll.GetEquipped(_account, slot);
             if (equipped != null)
             {
-                if (CharacterPaperDoll.TryUnequipSlotToStash(_account, slot))
+                if (_equippedTargetMode && _targetEquippedSlot == slot)
                 {
-                    Trace($"unequip slot:{slot}");
-                    _selectedStashIndex = -1;
-                    _onMutated?.Invoke();
+                    Trace($"target mode cancelled for slot:{slot}");
+                    CancelEquippedTargetMode(true);
                     RefreshView();
+                    return;
                 }
+
+                BeginEquippedTargetMode(slot);
+                Trace($"target mode for slot:{slot} enabled");
+                RefreshView();
+                return;
             }
             else if (_selectedStashIndex >= 0 &&
                      CharacterPaperDoll.TryEquipFromStashToSlot(_account, _selectedStashIndex, slot))
@@ -269,6 +277,24 @@ namespace ShatteredForge.UI
             var stash = _account.stash;
             if (stash == null || index < 0)
             {
+                return;
+            }
+
+            if (_equippedTargetMode)
+            {
+                if (CharacterPaperDoll.TryMoveOrSwapEquippedToStashCell(_account, _targetEquippedSlot, index))
+                {
+                    Trace($"target move/swap equipped:{_targetEquippedSlot} -> stash[{index}]");
+                    CancelEquippedTargetMode(true);
+                    _onMutated?.Invoke();
+                    RefreshView();
+                }
+                else
+                {
+                    Trace($"target move/swap failed equipped:{_targetEquippedSlot} -> stash[{index}]");
+                    RefreshView();
+                }
+
                 return;
             }
 
@@ -319,6 +345,7 @@ namespace ShatteredForge.UI
             _dragActive = true;
             _dragStashIndex = index;
             _selectedStashIndex = index;
+            CancelEquippedTargetMode(false);
             view?.SetEquipHighlightTemplate(it.templateId);
             Trace($"begin drag idx:{index} item:{it.templateId}");
             var mouse = Mouse.current != null
@@ -339,6 +366,31 @@ namespace ShatteredForge.UI
             view?.SetEquipHighlightTemplate(null);
             Trace(clearSelection ? "end drag + clear" : "end drag");
             view?.SetDragPreview(false, string.Empty, Vector2.zero);
+        }
+
+        private void BeginEquippedTargetMode(EquipmentBodySlot slot)
+        {
+            EndDrag(true);
+            _equippedTargetMode = true;
+            _targetEquippedSlot = slot;
+            _selectedStashIndex = -1;
+            view?.SetEquipHighlightSlot(slot);
+        }
+
+        private void CancelEquippedTargetMode(bool keepTrace)
+        {
+            if (!_equippedTargetMode)
+            {
+                return;
+            }
+
+            _equippedTargetMode = false;
+            _targetEquippedSlot = EquipmentBodySlot.None;
+            view?.ClearEquipHighlight();
+            if (keepTrace)
+            {
+                Trace("target mode off");
+            }
         }
 
         private static bool MoveOrSwapStash(System.Collections.Generic.List<ItemInstance> stash, int from, int to)
@@ -431,13 +483,18 @@ namespace ShatteredForge.UI
 
         private string BuildDebugText()
         {
-            var state = $"drag:{_dragActive} dragIdx:{_dragStashIndex} selected:{_selectedStashIndex} page:{_pageIndex}";
+            var state =
+                $"drag:{_dragActive} dragIdx:{_dragStashIndex} targetMode:{_equippedTargetMode} targetSlot:{_targetEquippedSlot} selected:{_selectedStashIndex} page:{_pageIndex}";
+            var targetHint = _equippedTargetMode
+                ? $"Целевой режим: выбери ячейку stash для слота {_targetEquippedSlot}."
+                : "Целевой режим: выключен.";
             if (_debugLines.Count == 0)
             {
-                return "debug: ready\n" + state;
+                return "debug: ready\n" + state + "\n" + targetHint;
             }
 
-            return state + "\n" + string.Join("\n", _debugLines.ToArray());
+            return state + "\n" + targetHint + "\n" + string.Join("\n", _debugLines.ToArray());
         }
+
     }
 }

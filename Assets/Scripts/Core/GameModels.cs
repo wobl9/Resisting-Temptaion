@@ -13,6 +13,8 @@ namespace ShatteredForge.Core
         public string templateId;
         public string rarity;
         public int enhanceLevel;
+        public float baseDamage;
+        public float baseArmor;
         public List<string> affixes = new();
         public List<string> sockets = new();
         public bool isInsuredForRun;
@@ -59,8 +61,8 @@ namespace ShatteredForge.Core
     [Serializable]
     public sealed class ComputedCharacterStats
     {
-        public int damage;
-        public int armor;
+        public float damage;
+        public float armor;
         public float attackSpeed;
         public float critChance;
         public int mana;

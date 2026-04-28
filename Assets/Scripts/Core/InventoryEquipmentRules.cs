@@ -223,14 +223,12 @@ namespace ShatteredForge.Core
 
         private static ItemInstance CreateStarterItemInstance(string templateId)
         {
-            return new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = templateId,
-                rarity = "Обычная",
-                enhanceLevel = 0,
-                isInsuredForRun = false
-            };
+            return ItemInstanceFactory.Create(
+                templateId,
+                rarity: "Обычная",
+                enhanceLevel: 0,
+                isInsuredForRun: false,
+                rerollBaseCombat: true);
         }
 
         private static bool RunContainsKind(IReadOnlyList<ItemInstance> equipped, ItemEquipmentKind kind)
@@ -272,7 +270,7 @@ namespace ShatteredForge.Core
             {
                 var old = run.equippedLoadout[swap];
                 run.equippedLoadout.RemoveAt(swap);
-                account.stash.Add(old);
+                PutIntoFirstFreeStashSlot(account.stash, old);
             }
 
             run.equippedLoadout.Add(item);
@@ -294,7 +292,7 @@ namespace ShatteredForge.Core
 
             var item = run.equippedLoadout[equippedIndex];
             run.equippedLoadout.RemoveAt(equippedIndex);
-            account.stash.Add(item);
+            PutIntoFirstFreeStashSlot(account.stash, item);
             CharacterStatsService.RecalculateForRun(account, run);
             return true;
         }
@@ -351,6 +349,26 @@ namespace ShatteredForge.Core
             }
 
             return -1;
+        }
+
+        private static void PutIntoFirstFreeStashSlot(List<ItemInstance> stash, ItemInstance item)
+        {
+            if (stash == null || item == null || string.IsNullOrWhiteSpace(item.templateId))
+            {
+                return;
+            }
+
+            for (var i = 0; i < stash.Count; i++)
+            {
+                var slot = stash[i];
+                if (slot == null || string.IsNullOrWhiteSpace(slot.templateId))
+                {
+                    stash[i] = item;
+                    return;
+                }
+            }
+
+            stash.Add(item);
         }
     }
 }

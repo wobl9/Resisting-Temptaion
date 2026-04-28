@@ -1,4 +1,5 @@
 using System;
+using ShatteredForge.Items;
 
 namespace ShatteredForge.Core
 {
@@ -28,13 +29,7 @@ namespace ShatteredForge.Core
 
         private static ItemInstance CreateMaterial(string templateId)
         {
-            return new ItemInstance
-            {
-                id = Guid.NewGuid().ToString(),
-                templateId = templateId,
-                rarity = "Обычная",
-                enhanceLevel = 0
-            };
+            return ItemInstanceFactory.Create(templateId);
         }
     }
 }
