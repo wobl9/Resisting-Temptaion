@@ -39,7 +39,7 @@ namespace ShatteredForge.Combat
 
             if (loopDemo == null)
             {
-                loopDemo = FindFirstObjectByType<PlayableLoopDemo>();
+                loopDemo = FindAnyObjectByType<PlayableLoopDemo>();
             }
 
             if (enemyStatCatalog == null)
@@ -195,6 +195,10 @@ namespace ShatteredForge.Combat
                 var stats = enemy.CurrentStats;
                 var dmg = stats?.damage ?? 0;
                 var arm = stats?.armor ?? 0;
+                var atkSpd = stats?.attackSpeed ?? 1f;
+                var crit = (stats?.critChance ?? 0f) * 100f;
+                var mana = stats?.mana ?? 0;
+                var magicPower = stats?.magicPower ?? 0;
                 var res = stats?.elementalResists;
                 var fire = res?.fire ?? 0;
                 var cold = res?.cold ?? 0;
@@ -209,8 +213,10 @@ namespace ShatteredForge.Combat
                     _ => new Color(1f, 0.45f, 0.45f)
                 };
 
-                var label = $"HP {enemy.CurrentHealth:0.0}/{enemy.MaxHealth:0.0}  DMG {dmg}  ARM {arm}  RES F/C/L {fire}/{cold}/{lightning}";
-                GUI.Label(new Rect(x, y, 320f, 24f), label);
+                var label = $"HP {enemy.CurrentHealth:0.0}/{enemy.MaxHealth:0.0}  DMG {dmg}  ARM {arm}  ASPD {atkSpd:0.00}  CRIT {crit:0.#}%";
+                GUI.Label(new Rect(x - 30f, y - 10f, 420f, 24f), label);
+                var line2 = $"MANA {mana}  M.PWR {magicPower}  RES F/C/L {fire}/{cold}/{lightning}";
+                GUI.Label(new Rect(x - 30f, y + 8f, 420f, 24f), line2);
                 GUI.color = prevColor;
             }
         }
@@ -259,7 +265,7 @@ namespace ShatteredForge.Combat
                     Quaternion.Euler(cameraPitch, 0f, 0f));
             }
 
-            if (UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Length == 0)
+            if (UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Exclude).Length == 0)
             {
                 var sun = new GameObject("Directional Light");
                 var light = sun.AddComponent<Light>();
@@ -406,6 +412,12 @@ namespace ShatteredForge.Combat
                 profile.primaryStats,
                 profile.flatBonuses);
             enemy.SetTarget(_player.transform);
+            if (loopDemo != null)
+            {
+                var pid = profile.id;
+                enemy.ConfigureKillLootReporter(p => loopDemo.NotifyEnemyKillLoot(p), pid);
+            }
+
             _enemies.Add(enemy);
             return enemy;
         }

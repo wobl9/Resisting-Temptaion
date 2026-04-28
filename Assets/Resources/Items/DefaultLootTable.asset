@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4e3d2c1b0a9786958473625140f1e2d, type: 3}
+  m_Name: DefaultLootTable
+  m_EditorClassIdentifier: 
+  roomClearRows:
+  - templateId: mat_bone_shard
+    weight: 55
+    minCount: 1
+    maxCount: 2
+  - templateId: mat_ember_dust
+    weight: 35
+    minCount: 1
+    maxCount: 2
+    appliesToRoomTypes:
+    - 4
+    - 6
+  - templateId: mat_void_sliver
+    weight: 18
+    minCount: 1
+    maxCount: 1
+    appliesToRoomTypes:
+    - 6
+  enemyKillRows:
+  - enemyProfileId: grunt
+    templateId: mat_bone_shard
+    weight: 45
+    minCount: 1
+    maxCount: 1
+  - enemyProfileId: elite
+    templateId: mat_ember_dust
+    weight: 40
+    minCount: 1
+    maxCount: 2
+  - enemyProfileId: boss
+    templateId: mat_void_sliver
+    weight: 35
+    minCount: 1
+    maxCount: 1
+  - enemyProfileId: boss
+    templateId: mat_bone_shard
+    weight: 25
+    minCount: 2
+    maxCount: 3

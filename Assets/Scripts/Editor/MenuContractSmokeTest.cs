@@ -25,7 +25,7 @@ namespace ShatteredForge.EditorTools
 
             EditorSceneManager.OpenScene(TargetScenePath, OpenSceneMode.Single);
 
-            var menu = Object.FindFirstObjectByType<MainMenuController>();
+            var menu = Object.FindAnyObjectByType<MainMenuController>();
             var issues = new List<string>();
 
             if (menu == null)

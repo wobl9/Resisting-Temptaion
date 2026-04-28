@@ -1,3 +1,4 @@
+using System;
 using ShatteredForge.Core;
 using UnityEngine;
 
@@ -22,6 +23,8 @@ namespace ShatteredForge.Combat
         private float _health;
         private float _nextDamageTime;
         private ComputedCharacterStats _computedStats;
+        private Action<string> _killLootReporter;
+        private string _lootProfileId = "grunt";
 
         public bool IsDead { get; private set; }
         public float CurrentHealth => _health;
@@ -35,6 +38,13 @@ namespace ShatteredForge.Combat
         public void SetTarget(Transform target)
         {
             _target = target;
+        }
+
+        /// <summary>Optional per-kill loot: <paramref name="profileId"/> matches loot table rows (grunt/elite/boss).</summary>
+        public void ConfigureKillLootReporter(Action<string> onProfileKilled, string profileId)
+        {
+            _killLootReporter = onProfileKilled;
+            _lootProfileId = string.IsNullOrWhiteSpace(profileId) ? "grunt" : profileId.Trim();
         }
 
         public void Configure(float health, float speed)
@@ -91,6 +101,7 @@ namespace ShatteredForge.Combat
             if (_health <= 0f)
             {
                 IsDead = true;
+                _killLootReporter?.Invoke(_lootProfileId);
                 Destroy(gameObject);
             }
         }

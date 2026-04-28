@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81b52ea83941be5499fb61f23f89176a, type: 3}
+  m_Name: CampCharacterSheetLayout
+  m_EditorClassIdentifier: Assembly-CSharp::ShatteredForge.UI.CampCharacterSheetLayoutAsset
+  canvas:
+    referenceResolution: {x: 1920, y: 1080}
+    widthHeightMatch: 0.45
+    panelSize: {x: 980, y: 760}
+    innerOffsetMin: {x: 10, y: 48}
+    innerOffsetMax: {x: -10, y: -8}
+  chrome:
+    titlePos: {x: 8, y: -4}
+    titleSize: {x: 220, y: 28}
+    titleFont: 18
+    goldPos: {x: 170, y: -4}
+    goldSize: {x: 240, y: 28}
+    goldFont: 16
+    hintOffsetMin: {x: 8, y: -72}
+    hintOffsetMax: {x: -8, y: -48}
+    hintFont: 10
+  paperDoll:
+    anchoredPosition: {x: 12, y: -96}
+    sizeDelta: {x: 940, y: 360}
+    torsoAnchoredPosition: {x: 428, y: -92}
+    torsoNormalizedPosition: {x: 0.5, y: 0.37096775}
+    useNormalizedTorsoPosition: 1
+    torsoSize: {x: 84, y: 112}
+    slots:
+    - slot: 1
+      anchoredPosition: {x: 430, y: -14}
+      normalizedPosition: {x: 0.4988399, y: 0.04761905}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 78, y: 66}
+      iconSprite: {fileID: 0}
+    - slot: 8
+      anchoredPosition: {x: 536, y: -28}
+      normalizedPosition: {x: 0.6036036, y: 0.09090909}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 52, y: 52}
+      iconSprite: {fileID: 0}
+    - slot: 2
+      anchoredPosition: {x: 414, y: -96}
+      normalizedPosition: {x: 0.49759614, y: 0.42105263}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 108, y: 132}
+      iconSprite: {fileID: 0}
+    - slot: 5
+      anchoredPosition: {x: 122, y: -80}
+      normalizedPosition: {x: 0.14386792, y: 0.42553192}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 92, y: 172}
+      iconSprite: {fileID: 0}
+    - slot: 6
+      anchoredPosition: {x: 712, y: -80}
+      normalizedPosition: {x: 0.8396226, y: 0.42553192}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 92, y: 172}
+      iconSprite: {fileID: 0}
+    - slot: 4
+      anchoredPosition: {x: 210, y: -270}
+      normalizedPosition: {x: 0.24305555, y: 0.9507042}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 76, y: 76}
+      iconSprite: {fileID: 0}
+    - slot: 7
+      anchoredPosition: {x: 328, y: -268}
+      normalizedPosition: {x: 0.37020317, y: 0.875817}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 54, y: 54}
+      iconSprite: {fileID: 0}
+    - slot: 9
+      anchoredPosition: {x: 560, y: -268}
+      normalizedPosition: {x: 0.63205415, y: 0.875817}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 54, y: 54}
+      iconSprite: {fileID: 0}
+    - slot: 3
+      anchoredPosition: {x: 678, y: -270}
+      normalizedPosition: {x: 0.7847222, y: 0.9507042}
+      useNormalizedPosition: 1
+      sizeDelta: {x: 76, y: 76}
+      iconSprite: {fileID: 0}
+  stash:
+    anchoredPosition: {x: 20, y: -470}
+    sizeDelta: {x: 920, y: 236}
+    cellSize: {x: 88, y: 56}
+    spacing: {x: 4, y: 4}
+    columns: 10
+    minRows: 4
+    poolSize: 80
+    captionAnchoredPosition: {x: 20, y: -444}
+    captionSize: {x: 780, y: 22}
+  tooltip:
+    sizeDelta: {x: 420, y: 220}
+    fontSize: 14
+    maxWidth: 420
+    maxHeight: 280

@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9b8c7d6e5f403928170615243a2b3c4, type: 3}
+  m_Name: DefaultCraftingRecipeCatalog
+  m_EditorClassIdentifier: 
+  recipes:
+  - recipeId: forge_t1_sword
+    station: 0
+    outputTemplateId: weapon_sword_t1
+    outputCount: 1
+    requiredUnlockedNodeId: 
+    ingredients:
+    - templateId: mat_bone_shard
+      count: 3
+    - templateId: mat_ember_dust
+      count: 2
+  - recipeId: alchemy_void_sliver
+    station: 1
+    outputTemplateId: mat_void_sliver
+    outputCount: 1
+    requiredUnlockedNodeId: 
+    ingredients:
+    - templateId: mat_bone_shard
+      count: 2
+    - templateId: mat_ember_dust
+      count: 2
+  - recipeId: forge_t1_armor
+    station: 0
+    outputTemplateId: armor_chest_t1
+    outputCount: 1
+    requiredUnlockedNodeId: 
+    ingredients:
+    - templateId: mat_bone_shard
+      count: 5

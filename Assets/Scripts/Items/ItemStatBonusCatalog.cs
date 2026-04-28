@@ -28,6 +28,11 @@ namespace ShatteredForge.Items
             public int fireResistance;
             public int coldResistance;
             public int lightningResistance;
+            [Header("Combat modifiers")]
+            public float attackSpeed;
+            public float critChance;
+            public int mana;
+            public int magicPower;
         }
 
         [SerializeField] private List<Entry> entries = new();

@@ -8,7 +8,9 @@ namespace ShatteredForge.Core
     {
         None,
         Weapon,
-        Armor
+        Armor,
+        Ring,
+        Amulet
     }
 
     /// <summary>
@@ -48,6 +50,16 @@ namespace ShatteredForge.Core
             if (templateId.StartsWith("armor_", StringComparison.Ordinal))
             {
                 return ItemEquipmentKind.Armor;
+            }
+
+            if (templateId.StartsWith("ring_", StringComparison.Ordinal))
+            {
+                return ItemEquipmentKind.Ring;
+            }
+
+            if (templateId.StartsWith("amulet_", StringComparison.Ordinal))
+            {
+                return ItemEquipmentKind.Amulet;
             }
 
             return ItemEquipmentKind.None;

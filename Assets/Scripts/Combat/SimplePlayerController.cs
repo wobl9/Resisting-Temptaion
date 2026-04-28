@@ -104,7 +104,9 @@ namespace ShatteredForge.Combat
 
             if (Time.time >= _nextFire)
             {
-                _nextFire = Time.time + fireInterval;
+                var attackSpeed = _statsProvider?.Invoke()?.attackSpeed ?? 1f;
+                var effectiveInterval = fireInterval / Mathf.Max(0.2f, attackSpeed);
+                _nextFire = Time.time + effectiveInterval;
                 Fire();
             }
         }
@@ -149,7 +151,11 @@ namespace ShatteredForge.Combat
             var stats = _statsProvider?.Invoke();
             if (stats != null)
             {
-                proj.damage = Mathf.Max(1f, stats.damage * 0.12f);
+                var isCrit = UnityEngine.Random.value < stats.critChance;
+                var critMultiplier = isCrit ? 1.75f : 1f;
+                var physical = stats.damage * 0.10f;
+                var magical = stats.magicPower * 0.08f;
+                proj.damage = Mathf.Max(1f, (physical + magical) * critMultiplier);
             }
             var rb = proj.GetComponent<Rigidbody>();
             rb.linearVelocity = dir * 18f;
@@ -157,7 +163,7 @@ namespace ShatteredForge.Combat
 
         private Transform FindNearestEnemy(Vector3 from, float maxDist)
         {
-            var enemies = FindObjectsByType<SimpleEnemy>(FindObjectsSortMode.None);
+            var enemies = FindObjectsByType<SimpleEnemy>(FindObjectsInactive.Exclude);
             Transform best = null;
             var bestDist = maxDist * maxDist;
             foreach (var e in enemies)

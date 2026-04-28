@@ -47,6 +47,12 @@ namespace ShatteredForge.SceneFlow
         [Tooltip("If null, loads Resources/Items/DefaultItemCatalog.")]
         [SerializeField] private ItemCatalog itemCatalog;
 
+        [Tooltip("If null, loads Resources/Items/DefaultVendorCatalog.")]
+        [SerializeField] private VendorCatalog vendorCatalog;
+
+        [Tooltip("If null, loads Resources/Items/DefaultCraftingRecipeCatalog.")]
+        [SerializeField] private CraftingRecipeCatalog craftingRecipeCatalog;
+
         private IProfileStorage _profilesService;
         private string _profileId;
         private ProfileData _profile;
@@ -54,10 +60,19 @@ namespace ShatteredForge.SceneFlow
 
         private NearKind _near;
         private string _status = string.Empty;
-        private bool _stubPanelOpen;
-        private NearKind _stubPanelKind;
+        private CampHubEconomyDraw.EconomyPanelKind _economyPanel = CampHubEconomyDraw.EconomyPanelKind.None;
+        private VendorCatalog _vendorCatalogRuntime;
+        private CraftingRecipeCatalog _craftingRecipeCatalogRuntime;
         private PlayerInventoryPanel _inventoryPanel;
         private CampCharacterSheetPanel _characterSheet;
+        private CampPauseMenuView _pauseMenuView;
+        private bool _pauseMenuOpen;
+        private bool _pauseSettingsOpen;
+        private float _savedTimeScale = 1f;
+        private float _masterVolume = 1f;
+        private bool _fullscreen = true;
+        private Resolution[] _resolutions;
+        private int _resolutionIndex;
 
         private void Awake()
         {
@@ -69,6 +84,32 @@ namespace ShatteredForge.SceneFlow
             {
                 Debug.LogWarning(
                     $"{nameof(CampHubController)}: ItemCatalog not assigned and Resources.Load(\"Items/DefaultItemCatalog\") failed. Item names / camp slots may be limited.");
+            }
+
+            _vendorCatalogRuntime = vendorCatalog != null
+                ? vendorCatalog
+                : Resources.Load<VendorCatalog>("Items/DefaultVendorCatalog");
+            var loadedRecipes = craftingRecipeCatalog != null
+                ? craftingRecipeCatalog
+                : Resources.Load<CraftingRecipeCatalog>("Items/DefaultCraftingRecipeCatalog");
+            if (loadedRecipes != null && loadedRecipes.recipes != null && loadedRecipes.recipes.Count > 0)
+            {
+                _craftingRecipeCatalogRuntime = loadedRecipes;
+            }
+            else
+            {
+                if (loadedRecipes == null)
+                {
+                    Debug.LogWarning(
+                        $"{nameof(CampHubController)}: CraftingRecipeCatalog not in Resources and not assigned; using baked default recipes.");
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"{nameof(CampHubController)}: CraftingRecipeCatalog has no recipes (check asset); using baked default recipes.");
+                }
+
+                _craftingRecipeCatalogRuntime = CraftingRecipeCatalog.CreateWithDefaultRecipes();
             }
 
             _profilesService = ProfileStorageFactory.Create(
@@ -125,11 +166,17 @@ namespace ShatteredForge.SceneFlow
             }
 
             _characterSheet.Bind(_account, PersistAccountIfNeeded, RefreshCampLookCapture);
+
+            _masterVolume = AudioListener.volume;
+            _fullscreen = Screen.fullScreen;
+            _resolutions = Screen.resolutions;
+            _resolutionIndex = FindCurrentResolutionIndex();
+            EnsurePauseMenuView();
         }
 
         private void RefreshCampLookCapture()
         {
-            var rig = FindFirstObjectByType<CampHubCameraRig>();
+            var rig = FindAnyObjectByType<CampHubCameraRig>();
             if (rig == null)
             {
                 return;
@@ -137,13 +184,23 @@ namespace ShatteredForge.SceneFlow
 
             var suppressed = (_characterSheet != null && _characterSheet.IsOpen) ||
                              (_inventoryPanel != null && _inventoryPanel.IsOpen) ||
-                             _stubPanelOpen;
+                             _economyPanel != CampHubEconomyDraw.EconomyPanelKind.None ||
+                             _pauseMenuOpen;
             rig.SetLookFromUiSuppressed(suppressed);
         }
 
         private void Update()
         {
             UpdateNearKind();
+            if (_pauseMenuOpen)
+            {
+                if (DemoInput.KeyDown(Key.Escape))
+                {
+                    SetPauseMenuOpen(false);
+                }
+                return;
+            }
+
             if (_characterSheet != null && _characterSheet.IsOpen && DemoInput.KeyDown(Key.Escape))
             {
                 _characterSheet.SetOpen(false);
@@ -158,14 +215,15 @@ namespace ShatteredForge.SceneFlow
 
             if (DemoInput.KeyDown(Key.Escape))
             {
-                if (_stubPanelOpen)
+                if (_economyPanel != CampHubEconomyDraw.EconomyPanelKind.None)
                 {
-                    SetStubPanelOpen(false);
+                    SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind.None);
                 }
                 else
                 {
-                    FindFirstObjectByType<CampHubCameraRig>()?.ToggleCursorLock();
+                    SetPauseMenuOpen(true);
                 }
+                return;
             }
 
             if (DemoInput.KeyDown(Key.E))
@@ -175,7 +233,14 @@ namespace ShatteredForge.SceneFlow
 
             if (DemoInput.KeyDown(Key.C))
             {
-                _characterSheet?.Toggle();
+                _characterSheet?.ToggleStats();
+                return;
+            }
+
+            if (DemoInput.KeyDown(Key.B))
+            {
+                _characterSheet?.ToggleInventory();
+                return;
             }
         }
 
@@ -189,9 +254,9 @@ namespace ShatteredForge.SceneFlow
             {
                 var label = _near switch
                 {
-                    NearKind.Shop => "Shop (stub) — E",
-                    NearKind.Forge => "Forge (stub) — E",
-                    NearKind.Alchemy => "Alchemy (stub) — E",
+                    NearKind.Shop => "Торговец — E",
+                    NearKind.Forge => "Кузница — E",
+                    NearKind.Alchemy => "Алхимия — E",
                     NearKind.Dungeon => "Dungeon — E to enter",
                     _ => string.Empty
                 };
@@ -204,31 +269,20 @@ namespace ShatteredForge.SceneFlow
                 hintY += 26;
             }
 
-            if (_stubPanelOpen)
+            if (_economyPanel != CampHubEconomyDraw.EconomyPanelKind.None)
             {
-                var w = 420f;
-                var h = 160f;
-                var r = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
-                GUI.Box(r, GUIContent.none);
-                GUILayout.BeginArea(new Rect(r.x + 16f, r.y + 12f, w - 32f, h - 24f));
-                var title = _stubPanelKind switch
+                if (CampHubEconomyDraw.DrawEconomyPanel(
+                        _economyPanel,
+                        _account,
+                        ItemCatalogRuntime.Current,
+                        _vendorCatalogRuntime,
+                        _craftingRecipeCatalogRuntime,
+                        PersistAccountIfNeeded))
                 {
-                    NearKind.Shop => "Shop",
-                    NearKind.Forge => "Forge",
-                    NearKind.Alchemy => "Alchemy lab",
-                    _ => "Stub"
-                };
-                GUILayout.Label(title, new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold });
-                GUILayout.Space(8f);
-                GUILayout.Label("Coming soon.");
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Close (E)", GUILayout.Height(32f)))
-                {
-                    SetStubPanelOpen(false);
+                    SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind.None);
                 }
-
-                GUILayout.EndArea();
             }
+
         }
 
         /// <summary>
@@ -238,7 +292,7 @@ namespace ShatteredForge.SceneFlow
         {
             if (playerBody == null)
             {
-                var found = FindFirstObjectByType<SimplePlayerController>();
+                var found = FindAnyObjectByType<SimplePlayerController>();
                 if (found != null)
                 {
                     playerBody = found.transform;
@@ -296,20 +350,186 @@ namespace ShatteredForge.SceneFlow
             root.GetComponent<SimplePlayerController>()?.ConfigureForCampHub();
         }
 
-        private void SetStubPanelOpen(bool open)
+        private void SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind panel)
         {
-            if (open && _inventoryPanel != null && _inventoryPanel.IsOpen)
+            if (panel != CampHubEconomyDraw.EconomyPanelKind.None && _inventoryPanel != null && _inventoryPanel.IsOpen)
             {
                 _inventoryPanel.SetOpen(false);
             }
 
-            if (open && _characterSheet != null && _characterSheet.IsOpen)
+            if (panel != CampHubEconomyDraw.EconomyPanelKind.None && _characterSheet != null && _characterSheet.IsOpen)
             {
                 _characterSheet.SetOpen(false);
             }
 
-            _stubPanelOpen = open;
+            _economyPanel = panel;
             RefreshCampLookCapture();
+        }
+
+        private void SetPauseMenuOpen(bool open)
+        {
+            if (_pauseMenuOpen == open)
+            {
+                return;
+            }
+
+            _pauseMenuOpen = open;
+            if (open)
+            {
+                _pauseSettingsOpen = false;
+                _savedTimeScale = Time.timeScale;
+                Time.timeScale = 0f;
+            }
+            else
+            {
+                _pauseSettingsOpen = false;
+                Time.timeScale = Mathf.Approximately(_savedTimeScale, 0f) ? 1f : _savedTimeScale;
+            }
+
+            if (_pauseMenuView != null)
+            {
+                _pauseMenuView.SetOpen(open);
+                if (open)
+                {
+                    _pauseMenuView.ShowMainPage();
+                }
+            }
+
+            RefreshCampLookCapture();
+        }
+
+        private void EnsurePauseMenuView()
+        {
+            if (_pauseMenuView != null)
+            {
+                return;
+            }
+
+            var fromResources = Resources.Load<CampPauseMenuView>(CampPauseMenuView.DefaultViewResourcesPath);
+            if (fromResources != null)
+            {
+                _pauseMenuView = Instantiate(fromResources, transform);
+                _pauseMenuView.name = "CampPauseMenuUi";
+            }
+            else
+            {
+                var holder = new GameObject("CampPauseMenuUi");
+                holder.transform.SetParent(transform, false);
+                _pauseMenuView = holder.AddComponent<CampPauseMenuView>();
+            }
+
+            _pauseMenuView.EnsureBuilt();
+            _pauseMenuView.SetOpen(false);
+            _pauseMenuView.Bind(
+                onContinue: () => SetPauseMenuOpen(false),
+                onOpenSettings: OpenPauseSettings,
+                onExitToMainMenu: TryExitToMainMenu,
+                onVolumeChanged: ApplyMasterVolume,
+                onToggleFullscreen: ToggleFullscreen,
+                onNextResolution: CycleResolution,
+                onBackFromSettings: BackFromPauseSettings);
+        }
+
+        private void OpenPauseSettings()
+        {
+            if (!_pauseMenuOpen || _pauseMenuView == null)
+            {
+                return;
+            }
+
+            _pauseSettingsOpen = true;
+            _pauseMenuView.ShowSettingsPage(_masterVolume, _fullscreen, GetResolutionLabel(_resolutionIndex));
+        }
+
+        private void BackFromPauseSettings()
+        {
+            if (!_pauseMenuOpen || _pauseMenuView == null)
+            {
+                return;
+            }
+
+            _pauseSettingsOpen = false;
+            _pauseMenuView.ShowMainPage();
+        }
+
+        private void ApplyMasterVolume(float value)
+        {
+            _masterVolume = Mathf.Clamp01(value);
+            AudioListener.volume = _masterVolume;
+            if (_pauseMenuOpen && _pauseSettingsOpen && _pauseMenuView != null)
+            {
+                _pauseMenuView.ShowSettingsPage(_masterVolume, _fullscreen, GetResolutionLabel(_resolutionIndex));
+            }
+        }
+
+        private void ToggleFullscreen()
+        {
+            _fullscreen = !_fullscreen;
+            Screen.fullScreen = _fullscreen;
+            if (_pauseMenuOpen && _pauseSettingsOpen && _pauseMenuView != null)
+            {
+                _pauseMenuView.ShowSettingsPage(_masterVolume, _fullscreen, GetResolutionLabel(_resolutionIndex));
+            }
+        }
+
+        private void CycleResolution()
+        {
+            if (_resolutions == null || _resolutions.Length == 0)
+            {
+                return;
+            }
+
+            _resolutionIndex = (_resolutionIndex + 1) % _resolutions.Length;
+            var resolution = _resolutions[_resolutionIndex];
+            Screen.SetResolution(resolution.width, resolution.height, _fullscreen);
+            if (_pauseMenuOpen && _pauseSettingsOpen && _pauseMenuView != null)
+            {
+                _pauseMenuView.ShowSettingsPage(_masterVolume, _fullscreen, GetResolutionLabel(_resolutionIndex));
+            }
+        }
+
+        private void TryExitToMainMenu()
+        {
+            if (SceneNavigation.IsBusy)
+            {
+                return;
+            }
+
+            Time.timeScale = 1f;
+            MenuSessionWriter.ClearResumeIntent();
+            MenuSessionWriter.SetPendingDungeonEntry(false);
+            SceneNavigation.GoTo(SceneNames.DefaultMenu);
+        }
+
+        private int FindCurrentResolutionIndex()
+        {
+            if (_resolutions == null || _resolutions.Length == 0)
+            {
+                return 0;
+            }
+
+            for (var i = 0; i < _resolutions.Length; i++)
+            {
+                var resolution = _resolutions[i];
+                if (resolution.width == Screen.currentResolution.width &&
+                    resolution.height == Screen.currentResolution.height)
+                {
+                    return i;
+                }
+            }
+
+            return _resolutions.Length - 1;
+        }
+
+        private string GetResolutionLabel(int index)
+        {
+            if (_resolutions == null || _resolutions.Length == 0)
+            {
+                return "N/A";
+            }
+
+            var resolution = _resolutions[Mathf.Clamp(index, 0, _resolutions.Length - 1)];
+            return $"{resolution.width} x {resolution.height} @ {Mathf.RoundToInt((float)resolution.refreshRateRatio.value)}Hz";
         }
 
         private void UpdateNearKind()
@@ -364,19 +584,22 @@ namespace ShatteredForge.SceneFlow
                 return;
             }
 
-            if (_stubPanelOpen)
+            if (_economyPanel != CampHubEconomyDraw.EconomyPanelKind.None)
             {
-                SetStubPanelOpen(false);
+                SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind.None);
                 return;
             }
 
             switch (_near)
             {
                 case NearKind.Shop:
+                    SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind.Shop);
+                    break;
                 case NearKind.Forge:
+                    SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind.Forge);
+                    break;
                 case NearKind.Alchemy:
-                    _stubPanelKind = _near;
-                    SetStubPanelOpen(true);
+                    SetEconomyPanel(CampHubEconomyDraw.EconomyPanelKind.Alchemy);
                     break;
                 case NearKind.Dungeon:
                     EnterDungeon();
@@ -401,6 +624,14 @@ namespace ShatteredForge.SceneFlow
             PendingCampDungeonRequest.Set();
             MenuSessionWriter.SetPendingDungeonEntry(true);
             SceneNavigation.GoTo(gameplaySceneName.Trim());
+        }
+
+        private void OnDestroy()
+        {
+            if (_pauseMenuOpen && Mathf.Approximately(Time.timeScale, 0f))
+            {
+                Time.timeScale = 1f;
+            }
         }
 
         private void PersistAccountIfNeeded()
@@ -446,6 +677,7 @@ namespace ShatteredForge.SceneFlow
                 enhanceLevel = 0
             });
 
+            AccountEconomy.AppendStarterCraftMaterials(account);
             return account;
         }
 

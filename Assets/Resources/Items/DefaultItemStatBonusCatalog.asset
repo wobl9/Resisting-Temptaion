@@ -23,6 +23,10 @@ MonoBehaviour:
     fireResistance: 0
     coldResistance: 0
     lightningResistance: 0
+    attackSpeed: 0.02
+    critChance: 0.01
+    mana: 0
+    magicPower: 0
   - templateId: armor_simple_chest
     strength: 0
     agility: 0
@@ -33,6 +37,10 @@ MonoBehaviour:
     fireResistance: 1
     coldResistance: 1
     lightningResistance: 0
+    attackSpeed: 0
+    critChance: 0
+    mana: 5
+    magicPower: 0
   - templateId: weapon_sword_t1
     strength: 2
     agility: 1
@@ -43,6 +51,10 @@ MonoBehaviour:
     fireResistance: 0
     coldResistance: 0
     lightningResistance: 1
+    attackSpeed: 0.04
+    critChance: 0.02
+    mana: 0
+    magicPower: 0
   - templateId: armor_chest_t1
     strength: 1
     agility: 0
@@ -53,3 +65,7 @@ MonoBehaviour:
     fireResistance: 2
     coldResistance: 2
     lightningResistance: 1
+    attackSpeed: 0
+    critChance: 0.01
+    mana: 8
+    magicPower: 1

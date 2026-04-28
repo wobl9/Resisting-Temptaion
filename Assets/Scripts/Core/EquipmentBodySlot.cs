@@ -13,6 +13,7 @@ namespace ShatteredForge.Core
         MainHand = 5,
         OffHand = 6,
         Ring = 7,
-        Amulet = 8
+        Amulet = 8,
+        Ring2 = 9
     }
 }

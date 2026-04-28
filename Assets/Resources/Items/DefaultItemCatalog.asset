@@ -18,18 +18,40 @@ MonoBehaviour:
     equipKind: 1
     preferredBodySlot: 5
     buyGoldPrice: 5
+    catalogKind: 0
   - templateId: armor_simple_chest
     displayNameRu: "\u041f\u0440\u043e\u0441\u0442\u0430\u044f \u0431\u0440\u043e\u043d\u044f"
     equipKind: 2
     preferredBodySlot: 2
     buyGoldPrice: 6
+    catalogKind: 0
   - templateId: weapon_sword_t1
     displayNameRu: "\u041c\u0435\u0447 (T1)"
     equipKind: 1
     preferredBodySlot: 5
     buyGoldPrice: 7
+    catalogKind: 0
   - templateId: armor_chest_t1
     displayNameRu: "\u0411\u0440\u043e\u043d\u044f (T1)"
     equipKind: 2
     preferredBodySlot: 2
     buyGoldPrice: 7
+    catalogKind: 0
+  - templateId: mat_bone_shard
+    displayNameRu: "\u041e\u0441\u043a\u043e\u043b\u043e\u043a \u043a\u043e\u0441\u0442\u0438"
+    equipKind: 0
+    preferredBodySlot: 0
+    buyGoldPrice: 2
+    catalogKind: 1
+  - templateId: mat_ember_dust
+    displayNameRu: "\u041f\u0435\u043f\u0435\u043b \u0443\u0433\u043b\u044f"
+    equipKind: 0
+    preferredBodySlot: 0
+    buyGoldPrice: 3
+    catalogKind: 1
+  - templateId: mat_void_sliver
+    displayNameRu: "\u0429\u0435\u043f\u043a\u0430 \u043f\u0443\u0441\u0442\u043e\u0442\u044b"
+    equipKind: 0
+    preferredBodySlot: 0
+    buyGoldPrice: 10
+    catalogKind: 1

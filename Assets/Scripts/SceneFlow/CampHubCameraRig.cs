@@ -269,7 +269,7 @@ namespace ShatteredForge.SceneFlow
                 return;
             }
 
-            var player = FindFirstObjectByType<SimplePlayerController>();
+            var player = FindAnyObjectByType<SimplePlayerController>();
             if (player != null)
             {
                 followTarget = player.transform;
@@ -294,7 +294,7 @@ namespace ShatteredForge.SceneFlow
 
         private void ApplyCampMovementOnPlayer()
         {
-            var p = FindFirstObjectByType<SimplePlayerController>();
+            var p = FindAnyObjectByType<SimplePlayerController>();
             p?.ConfigureForCampHub();
         }
 

@@ -61,6 +61,10 @@ namespace ShatteredForge.Core
     {
         public int damage;
         public int armor;
+        public float attackSpeed;
+        public float critChance;
+        public int mana;
+        public int magicPower;
         public ElementalResistanceProfile elementalResists = new();
     }
 
@@ -76,6 +80,10 @@ namespace ShatteredForge.Core
         public int fireResistance;
         public int coldResistance;
         public int lightningResistance;
+        public float attackSpeed;
+        public float critChance;
+        public int mana;
+        public int magicPower;
     }
 
     [Serializable]

@@ -37,6 +37,9 @@ namespace ShatteredForge.Prototype
         [Tooltip("If null, loads Resources/Items/DefaultItemCatalog.")]
         [SerializeField] private ItemCatalog itemCatalog;
 
+        [Tooltip("If null, loads Resources/Items/DefaultLootTable.")]
+        [SerializeField] private LootTableDefinition runLootTable;
+
         [Header("Profile storage")]
         [SerializeField] private ProfileStorageMode profileStorageMode = ProfileStorageMode.Local;
         [SerializeField] private string remoteProfileStorageBaseUrl = "";
@@ -54,6 +57,8 @@ namespace ShatteredForge.Prototype
         private List<RoomType> _rooms;
         private string _lastOutcome = "No runs yet.";
         private PlayerInventoryPanel _inventoryPanel;
+        private LootTableDefinition _lootTableRuntime;
+        private int _killLootNonce;
 
         public bool IsInRun => _state == DemoState.InRun && _runController.CurrentRun != null;
         public RunState CurrentRun => _runController?.CurrentRun;
@@ -70,6 +75,10 @@ namespace ShatteredForge.Prototype
                 Debug.LogWarning(
                     $"{nameof(PlayableLoopDemo)}: ItemCatalog not assigned and Resources.Load(\"Items/DefaultItemCatalog\") failed.");
             }
+
+            _lootTableRuntime = runLootTable != null
+                ? runLootTable
+                : Resources.Load<LootTableDefinition>("Items/DefaultLootTable");
 
             _profilesService = ProfileStorageFactory.Create(
                 profileStorageMode,
@@ -271,6 +280,25 @@ namespace ShatteredForge.Prototype
             KillPlayer();
         }
 
+        /// <summary>Called from combat when an enemy dies; adds optional kill-table drops to <see cref="RunState.carryLoot"/>.</summary>
+        public void NotifyEnemyKillLoot(string enemyProfileId)
+        {
+            if (!IsInRun || _runController?.CurrentRun == null || string.IsNullOrWhiteSpace(enemyProfileId))
+            {
+                return;
+            }
+
+            var run = _runController.CurrentRun;
+            foreach (var it in RunLootService.RollEnemyKillLoot(
+                         _lootTableRuntime,
+                         enemyProfileId.Trim(),
+                         run.seed,
+                         _killLootNonce++))
+            {
+                run.carryLoot.Add(it);
+            }
+        }
+
         private void SimulateClearRoom()
         {
             ApplyRoomClearInternal(useCombatHpRules: false);
@@ -291,7 +319,19 @@ namespace ShatteredForge.Prototype
             }
 
             var room = _rooms[run.roomIndex];
-            run.carryLoot.Add(GenerateLootForRoom(room));
+            var rolled = RunLootService.RollRoomClearLoot(_lootTableRuntime, room, run.seed, run.roomIndex);
+            if (rolled.Count == 0)
+            {
+                run.carryLoot.Add(GenerateLootForRoom(room));
+            }
+            else
+            {
+                foreach (var it in rolled)
+                {
+                    run.carryLoot.Add(it);
+                }
+            }
+
             if (!useCombatHpRules)
             {
                 run.hpState = Mathf.Clamp01(run.hpState - UnityEngine.Random.Range(0.05f, 0.20f));
@@ -458,6 +498,7 @@ namespace ShatteredForge.Prototype
                 enhanceLevel = 0
             });
 
+            AccountEconomy.AppendStarterCraftMaterials(account);
             return account;
         }
 

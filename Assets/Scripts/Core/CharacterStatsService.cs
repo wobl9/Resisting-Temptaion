@@ -11,6 +11,9 @@ namespace ShatteredForge.Core
         private const int BaseDamage = 5;
         private const int BaseArmor = 2;
         private const int BaseElementalResistance = 3;
+        private const float BaseAttackSpeed = 1f;
+        private const float BaseCritChance = 0.05f;
+        private const int BaseMana = 20;
 
         public static void EnsureInitialized(AccountState account)
         {
@@ -73,6 +76,10 @@ namespace ShatteredForge.Core
             var bonusFire = 0;
             var bonusCold = 0;
             var bonusLightning = 0;
+            var bonusAttackSpeed = 0f;
+            var bonusCritChance = 0f;
+            var bonusMana = 0;
+            var bonusMagicPower = 0;
 
             var bonusCatalog = ItemStatBonusCatalogRuntime.Current;
             if (equippedItems != null && bonusCatalog != null)
@@ -99,6 +106,10 @@ namespace ShatteredForge.Core
                     bonusFire += bonus.fireResistance;
                     bonusCold += bonus.coldResistance;
                     bonusLightning += bonus.lightningResistance;
+                    bonusAttackSpeed += bonus.attackSpeed;
+                    bonusCritChance += bonus.critChance;
+                    bonusMana += bonus.mana;
+                    bonusMagicPower += bonus.magicPower;
                 }
             }
 
@@ -111,7 +122,11 @@ namespace ShatteredForge.Core
                 bonusArmor,
                 bonusFire,
                 bonusCold,
-                bonusLightning);
+                bonusLightning,
+                bonusAttackSpeed,
+                bonusCritChance,
+                bonusMana,
+                bonusMagicPower);
         }
 
         public static ComputedCharacterStats BuildComputed(CharacterPrimaryStats baseStats, FlatStatBonuses bonuses)
@@ -127,7 +142,11 @@ namespace ShatteredForge.Core
                 bonuses.armor,
                 bonuses.fireResistance,
                 bonuses.coldResistance,
-                bonuses.lightningResistance);
+                bonuses.lightningResistance,
+                bonuses.attackSpeed,
+                bonuses.critChance,
+                bonuses.mana,
+                bonuses.magicPower);
         }
 
         private static ComputedCharacterStats BuildComputedFromResolvedTotals(
@@ -139,12 +158,20 @@ namespace ShatteredForge.Core
             int bonusArmor,
             int bonusFire,
             int bonusCold,
-            int bonusLightning)
+            int bonusLightning,
+            float bonusAttackSpeed,
+            float bonusCritChance,
+            int bonusMana,
+            int bonusMagicPower)
         {
             return new ComputedCharacterStats
             {
                 damage = BaseDamage + totalStrength + (totalAgility / 2) + bonusDamage,
                 armor = BaseArmor + totalVitality + (totalStrength / 3) + bonusArmor,
+                attackSpeed = BaseAttackSpeed + totalAgility * 0.01f + bonusAttackSpeed,
+                critChance = UnityEngine.Mathf.Clamp01(BaseCritChance + totalAgility * 0.0025f + bonusCritChance),
+                mana = BaseMana + totalIntellect * 5 + bonusMana,
+                magicPower = totalIntellect * 2 + bonusMagicPower,
                 elementalResists = new ElementalResistanceProfile
                 {
                     fire = BaseElementalResistance + totalIntellect + (totalVitality / 3) + bonusFire,

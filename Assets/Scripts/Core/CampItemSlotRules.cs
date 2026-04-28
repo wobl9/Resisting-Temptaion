@@ -28,6 +28,26 @@ namespace ShatteredForge.Core
                     return slot == EquipmentBodySlot.MainHand || slot == EquipmentBodySlot.OffHand;
                 }
 
+                if (kind == ItemEquipmentKind.Ring)
+                {
+                    if (entry.preferredBodySlot == EquipmentBodySlot.Ring2)
+                    {
+                        return slot == EquipmentBodySlot.Ring2;
+                    }
+
+                    if (entry.preferredBodySlot == EquipmentBodySlot.Ring)
+                    {
+                        return slot == EquipmentBodySlot.Ring;
+                    }
+
+                    return slot == EquipmentBodySlot.Ring || slot == EquipmentBodySlot.Ring2;
+                }
+
+                if (kind == ItemEquipmentKind.Amulet)
+                {
+                    return slot == EquipmentBodySlot.Amulet;
+                }
+
                 return slot == entry.preferredBodySlot;
             }
 
@@ -39,6 +59,16 @@ namespace ShatteredForge.Core
             if (kind == ItemEquipmentKind.Armor)
             {
                 return slot == EquipmentBodySlot.Chest;
+            }
+
+            if (kind == ItemEquipmentKind.Ring)
+            {
+                return slot == EquipmentBodySlot.Ring || slot == EquipmentBodySlot.Ring2;
+            }
+
+            if (kind == ItemEquipmentKind.Amulet)
+            {
+                return slot == EquipmentBodySlot.Amulet;
             }
 
             return false;

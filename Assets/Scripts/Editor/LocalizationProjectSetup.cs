@@ -189,7 +189,7 @@ namespace ShatteredForge.EditorTools
             var previousScenePath = SceneManager.GetActiveScene().path;
             var menuScene = EditorSceneManager.OpenScene(MenuScenePath, OpenSceneMode.Single);
 
-            var menu = Object.FindFirstObjectByType<ShatteredForge.Menu.MainMenuController>();
+            var menu = Object.FindAnyObjectByType<ShatteredForge.Menu.MainMenuController>();
             if (menu == null)
             {
                 Debug.LogWarning($"OpenScene failed to find {nameof(ShatteredForge.Menu.MainMenuController)} in {MenuScenePath}.");
