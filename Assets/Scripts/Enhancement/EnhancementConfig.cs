@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ShatteredForge.Enhancement
 {
-    [CreateAssetMenu(fileName = "EnhancementConfig", menuName = "ShatteredForge/Enhancement Config")]
+    [CreateAssetMenu(fileName = "EnhancementConfig", menuName = "Shattered Forge/Enhancement Config")]
     public class EnhancementConfig : ScriptableObject
     {
         [Serializable]

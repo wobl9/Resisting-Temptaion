@@ -14,7 +14,7 @@ namespace ShatteredForge.EditorTools
         private const string LegacyPrefabPath = "Assets/Resources/UI/CampPauseMenuUi.prefab";
         private const string GenericPrefabPath = "Assets/Resources/UI/PauseMenuUi.prefab";
 
-        [MenuItem("ShatteredForge/UI/Bake Camp Pause Menu UI Prefab", priority = 52)]
+        [MenuItem("Shattered Forge/UI/Bake Camp Pause Menu UI Prefab", priority = 52)]
         public static void BakePrefab()
         {
             EnsureFolder("Assets/Resources");

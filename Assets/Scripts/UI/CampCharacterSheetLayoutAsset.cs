@@ -80,7 +80,7 @@ namespace ShatteredForge.UI
 
     [CreateAssetMenu(
         fileName = "CampCharacterSheetLayout",
-        menuName = "ShatteredForge/UI/Camp Character Sheet Layout")]
+        menuName = "Shattered Forge/UI/Camp Character Sheet Layout")]
     public sealed class CampCharacterSheetLayoutAsset : ScriptableObject
     {
         public CampCharacterSheetCanvasLayout canvas = new();

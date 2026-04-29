@@ -5,7 +5,7 @@ namespace ShatteredForge.EditorTools
 {
     public static class LevelModeBootstrapAllCreator
     {
-        [MenuItem("ShatteredForge/Levels/Bootstrap All (Scene + Content + Pause Prefabs)", priority = 30)]
+        [MenuItem("Shattered Forge/Levels/Bootstrap All (Scene + Content + Pause Prefabs)", priority = 30)]
         public static void BootstrapAll()
         {
             LevelSceneCreator.CreateLevelScene();

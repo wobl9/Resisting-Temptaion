@@ -4,7 +4,7 @@ namespace ShatteredForge.UI
 {
     [CreateAssetMenu(
         fileName = "CampCharacterSheetSkin",
-        menuName = "ShatteredForge/UI/Camp Character Sheet Skin")]
+        menuName = "Shattered Forge/UI/Camp Character Sheet Skin")]
     public sealed class CampCharacterSheetSkinAsset : ScriptableObject
     {
         [Header("Main surfaces")]

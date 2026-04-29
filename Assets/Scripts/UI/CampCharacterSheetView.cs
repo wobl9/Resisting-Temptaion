@@ -1014,7 +1014,7 @@ namespace ShatteredForge.UI
 
         /// <summary>
         /// Editor: builds the default hierarchy (visible canvas) so you can save this object as a prefab
-        /// and tune RectTransforms. Menu: ShatteredForge → UI → Bake Camp Character Sheet UI Prefab.
+        /// and tune RectTransforms. Menu: Shattered Forge → UI → Bake Camp Character Sheet UI Prefab.
         /// </summary>
         public void EditorBakeDefaultUiForPrefab()
         {

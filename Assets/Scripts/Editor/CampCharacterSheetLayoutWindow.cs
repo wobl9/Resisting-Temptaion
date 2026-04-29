@@ -15,7 +15,7 @@ namespace ShatteredForge.EditorTools
         private string _validationText = string.Empty;
         private bool _livePreview;
 
-        [MenuItem("ShatteredForge/UI/Character Sheet Layout Window", priority = 40)]
+        [MenuItem("Shattered Forge/UI/Character Sheet Layout Window", priority = 40)]
         public static void Open()
         {
             var w = GetWindow<CampCharacterSheetLayoutWindow>("Character Sheet Layout");

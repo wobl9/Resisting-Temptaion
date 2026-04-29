@@ -10,7 +10,7 @@ namespace ShatteredForge.EditorTools
     {
         private const string ScenePath = "Assets/Scenes/LevelScene.unity";
 
-        [MenuItem("ShatteredForge/Scenes/Create Level Scene", priority = 31)]
+        [MenuItem("Shattered Forge/Scenes/Create Level Scene", priority = 31)]
         public static void CreateLevelScene()
         {
             EnsureFolder("Assets/Scenes");

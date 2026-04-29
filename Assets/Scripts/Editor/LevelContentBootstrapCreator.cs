@@ -15,7 +15,7 @@ namespace ShatteredForge.EditorTools
         private const string LootPath = RootPath + "/Loot";
         private const string CatalogPath = RootPath + "/DefaultLevelCatalog.asset";
 
-        [MenuItem("ShatteredForge/Levels/Bootstrap Demo Level Content", priority = 33)]
+        [MenuItem("Shattered Forge/Levels/Bootstrap Demo Level Content", priority = 33)]
         public static void BootstrapDemoContent()
         {
             EnsureFolder("Assets/Resources");

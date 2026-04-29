@@ -14,13 +14,13 @@ namespace ShatteredForge.EditorTools
         private const string ActiveLayoutEditorPref = "ShatteredForge.CampCharacterSheet.ActiveLayout";
         private const string ActiveSkinEditorPref = "ShatteredForge.CampCharacterSheet.ActiveSkin";
 
-        [MenuItem("ShatteredForge/UI/Bake Camp Character Sheet UI Prefab (Default)", priority = 50)]
+        [MenuItem("Shattered Forge/UI/Bake Camp Character Sheet UI Prefab (Default)", priority = 50)]
         public static void BakePrefabDefault()
         {
             BakePrefab(null);
         }
 
-        [MenuItem("ShatteredForge/UI/Bake Camp Character Sheet UI Prefab (Using Active Layout)", priority = 51)]
+        [MenuItem("Shattered Forge/UI/Bake Camp Character Sheet UI Prefab (Using Active Layout)", priority = 51)]
         public static void BakePrefabUsingActiveLayout()
         {
             var layout = LoadActiveLayout();
